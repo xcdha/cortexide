@@ -51,8 +51,7 @@ export class ElectronURLListener extends Disposable {
 		// Windows: install as protocol handler
 		// Skip in portable mode: the registered command wouldn't preserve
 		// portable mode settings, causing issues with OAuth flows.
-		// Skip for embedded apps: protocol handler is registered at install time.
-		if (isWindows && !environmentMainService.isPortable && !(process as INodeProcess).isEmbeddedApp) {
+		if (isWindows && !environmentMainService.isPortable) {
 			const windowsParameters = environmentMainService.isBuilt ? [] : [`"${environmentMainService.appRoot}"`];
 			windowsParameters.push('--open-url', '--');
 			app.setAsDefaultProtocolClient(productService.urlProtocol, process.execPath, windowsParameters);

@@ -12,8 +12,8 @@ import { join } from '../../../base/common/path.js';
 import { StopWatch } from '../../../base/common/stopwatch.js';
 import { URI } from '../../../base/common/uri.js';
 import { Promises } from '../../../base/node/pfs.js';
-import { InMemoryStorageDatabase, IStorage, IStorageDatabase, IStorageItemsChangeEvent, IUpdateRequest, Storage, StorageHint, StorageState, MigratingStorage } from '../../../base/parts/storage/common/storage.js';
-import { ISQLiteStorageDatabaseLoggingOptions, ISQLiteStorageDatabaseOptions, SQLiteStorageDatabase } from '../../../base/parts/storage/node/storage.js';
+import { InMemoryStorageDatabase, IStorage, Storage, StorageHint, StorageState, MigratingStorage } from '../../../base/parts/storage/common/storage.js';
+import { ISQLiteStorageDatabaseLoggingOptions, SQLiteStorageDatabase } from '../../../base/parts/storage/node/storage.js';
 import { IEnvironmentService } from '../../environment/common/environment.js';
 import { IFileService } from '../../files/common/files.js';
 import { ILogService, LogLevel } from '../../log/common/log.js';
@@ -361,15 +361,12 @@ export class ApplicationSharedStorageMain extends BaseStorageMain {
 		return undefined;
 	}
 
-	private sharedDatabase: SharedSQLiteStorageDatabase | undefined;
-
 	constructor(
 		private readonly options: IStorageMainOptions,
 		private readonly storageFolderPath: string,
 		private readonly applicationStorage: IStorageMain,
 		logService: ILogService,
 		fileService: IFileService,
-		private readonly crossAppIPCService: ICrossAppIPCService,
 	) {
 		super(logService, fileService);
 	}
@@ -379,30 +376,17 @@ export class ApplicationSharedStorageMain extends BaseStorageMain {
 
 		this.logService.info(`[shared storage] Creating shared storage database at '${storageFilePath}' (wasCreated: ${wasCreated})`);
 
-		this.sharedDatabase = new SharedSQLiteStorageDatabase(storageFilePath, {
-			logging: this.createLoggingOptions(),
-			useWAL: true,
-			busyTimeout: 2000
-		}, this.crossAppIPCService, this.logService);
-		this._register(this.sharedDatabase);
+		const database = new SQLiteStorageDatabase(storageFilePath, {
+			logging: this.createLoggingOptions()
+		});
 
-		this.logService.info(`[shared storage] Initializing fallback application storage (type: ${this.applicationStorage instanceof HostApplicationStorageMain ? 'host' : 'local'}, path: ${this.applicationStorage.path ?? 'in-memory'})`);
+		this.logService.info(`[shared storage] Initializing fallback application storage (path: ${this.applicationStorage.path ?? 'in-memory'})`);
 		await this.applicationStorage.init();
 		this.logService.info(`[shared storage] Fallback application storage initialized with ${this.applicationStorage.items.size} items`);
 
-		const migratingStorage = this._register(new MigratingStorage(this.sharedDatabase, { hint: wasCreated ? StorageHint.STORAGE_DOES_NOT_EXIST : undefined }));
-		migratingStorage.setFallbackStorage(this.applicationStorage.storage, this.applicationStorage instanceof HostApplicationStorageMain);
+		const migratingStorage = this._register(new MigratingStorage(database, { hint: wasCreated ? StorageHint.STORAGE_DOES_NOT_EXIST : undefined }));
+		migratingStorage.setFallbackStorage(this.applicationStorage.storage, false);
 		return migratingStorage;
-	}
-
-	protected override async doInit(storage: IStorage): Promise<void> {
-		await super.doInit(storage);
-
-		// Mark the shared database as initialized so that
-		// cross-app IPC messages are processed from now on.
-		// This must happen after Storage.init() completes to
-		// avoid processing stale queued messages.
-		this.sharedDatabase?.setInitialized();
 	}
 
 	get applicationStorageItems(): Map<string, string> {
@@ -425,29 +409,6 @@ export class ApplicationSharedStorageMain extends BaseStorageMain {
 
 		return { storageFilePath: storageDatabasePath, wasCreated: true };
 	}
-}
-
-export class HostApplicationStorageMain extends BaseStorageMain {
-
-	constructor(
-		readonly path: string,
-		logService: ILogService,
-		fileService: IFileService
-	) {
-		super(logService, fileService);
-	}
-
-	protected async doCreate(): Promise<Storage> {
-		this.logService.info(`[shared storage] Opening host application storage at '${this.path}'`);
-		try {
-			const storage = new Storage(new SQLiteStorageDatabase(this.path, { logging: this.createLoggingOptions() }));
-			return storage;
-		} catch (error) {
-			this.logService.error(`[shared storage] Failed to open host application storage at '${this.path}': ${error}`);
-			throw error;
-		}
-	}
-
 }
 
 export class WorkspaceStorageMain extends BaseStorageMain {

@@ -26,7 +26,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Cpu, ExternalLink, Loader2, Settings, X, Zap } from 'lucide-react';
-import { useAccessor } from '../util/services.js';
+import { useAccessor, useIsDark } from '../util/services.js';
 import { useTranslation } from '../util/useTranslation.js';
 import { MODEL_PACKS, type ModelPackKey } from '../../../../common/ollamaInstallerService.js';
 import { LocalSetupWizard } from './LocalSetupWizard.js';
@@ -149,9 +149,6 @@ export const ExpressOnboardingFlow = ({ onCustomize, onDismiss }: ExpressOnboard
 			// non-empty default.)
 			settingsService.addModel('ollama', pack.tag);
 			await settingsService.setModelSelectionOfFeature('Chat', { providerName: 'ollama', modelName: pack.tag });
-			const fimTag = pack.tag.includes('coder') ? pack.tag : 'qwen2.5-coder:7b';
-			settingsService.addModel('ollama', fimTag);
-			await settingsService.setModelSelectionOfFeature('Autocomplete', { providerName: 'ollama', modelName: fimTag });
 			settingsService.setGlobalSetting('isOnboardingComplete', true);
 			setPhase('ready');
 		} catch (e) {
@@ -311,13 +308,14 @@ const ExpressShell = ({ children, onCustomize, onDismiss }: {
 	onDismiss: () => void;
 }) => {
 	const { t } = useTranslation();
+	const isDark = useIsDark();
 	return (
 		<div
 			className="w-full max-w-[640px] mx-auto rounded-[28px] border p-8 backdrop-blur-xl"
 			style={{
-				borderColor: 'var(--cortex-border-3, rgba(255,255,255,0.1))',
-				background: 'var(--cortex-bg-2, rgba(15,15,20,0.72))',
-				boxShadow: '0 40px 110px rgba(0,0,0,0.55)',
+				borderColor: isDark ? 'var(--cortex-border-3, rgba(255,255,255,0.1))' : 'var(--cortex-border-3, rgba(0,0,0,0.1))',
+				background: isDark ? 'var(--cortex-bg-2, rgba(15,15,20,0.72))' : 'var(--cortex-bg-2, rgba(245,245,245,0.72))',
+				boxShadow: `0 40px 110px rgba(0,0,0,${isDark ? 0.55 : 0.15})`,
 			}}
 		>
 			<div className="flex items-start justify-between mb-6">
@@ -329,10 +327,10 @@ const ExpressShell = ({ children, onCustomize, onDismiss }: {
 						<Zap className="w-5 h-5 text-white" />
 					</div>
 					<div>
-						<h1 className="text-xl font-semibold" style={{ color: 'var(--cortex-fg-0, #ffffff)' }}>
+						<h1 className="text-xl font-semibold" style={{ color: isDark ? 'var(--cortex-fg-0, #ffffff)' : 'var(--cortex-fg-0, #1a1a1a)' }}>
 							{t('express.title')}
 						</h1>
-						<p className="text-sm mt-0.5" style={{ color: 'var(--cortex-fg-3, rgba(255,255,255,0.6))' }}>
+						<p className="text-sm mt-0.5" style={{ color: isDark ? 'var(--cortex-fg-3, rgba(255,255,255,0.6))' : 'var(--cortex-fg-3, rgba(0,0,0,0.6))' }}>
 							{t('express.subtitle')}
 						</p>
 					</div>
@@ -341,7 +339,8 @@ const ExpressShell = ({ children, onCustomize, onDismiss }: {
 					type="button"
 					onClick={onDismiss}
 					aria-label={t('express.dismiss')}
-					className="btn btn-icon btn-ghost p-2"
+					className="p-2 rounded-xl transition-colors"
+					style={{ color: isDark ? 'var(--cortex-fg-3, rgba(255,255,255,0.6))' : 'var(--cortex-fg-3, rgba(0,0,0,0.6))' }}
 				>
 					<X className="w-4 h-4" />
 				</button>
@@ -351,12 +350,13 @@ const ExpressShell = ({ children, onCustomize, onDismiss }: {
 
 			<div
 				className="flex items-center justify-between pt-4 border-t"
-				style={{ borderColor: 'var(--cortex-border-4, rgba(255,255,255,0.06))' }}
+				style={{ borderColor: isDark ? 'var(--cortex-border-4, rgba(255,255,255,0.06))' : 'var(--cortex-border-4, rgba(0,0,0,0.06))' }}
 			>
 				<button
 					type="button"
 					onClick={onCustomize}
-					className="btn btn-ghost btn-sm inline-flex items-center gap-2 text-xs font-medium"
+					className="inline-flex items-center gap-2 text-xs font-medium transition-colors"
+					style={{ color: isDark ? 'var(--cortex-fg-3, rgba(255,255,255,0.6))' : 'var(--cortex-fg-3, rgba(0,0,0,0.6))' }}
 				>
 					<Settings className="w-3.5 h-3.5" />
 					{t('express.customize')}
@@ -364,7 +364,8 @@ const ExpressShell = ({ children, onCustomize, onDismiss }: {
 				<button
 					type="button"
 					onClick={onDismiss}
-					className="btn btn-ghost btn-sm text-xs font-medium"
+					className="text-xs font-medium transition-colors"
+					style={{ color: isDark ? 'var(--cortex-fg-4, rgba(255,255,255,0.45))' : 'var(--cortex-fg-4, rgba(0,0,0,0.45))' }}
 				>
 					{t('express.dismiss')}
 				</button>
@@ -373,12 +374,15 @@ const ExpressShell = ({ children, onCustomize, onDismiss }: {
 	);
 };
 
-const DetectingPanel = ({ t }: { t: ReturnType<typeof useTranslation>['t'] }) => (
-	<div className="flex items-center gap-3">
-		<Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--cortex-brand, #6b5bff)' }} />
-		<span style={{ color: 'var(--cortex-fg-2, rgba(255,255,255,0.8))' }}>{t('express.detecting')}</span>
-	</div>
-);
+const DetectingPanel = ({ t }: { t: ReturnType<typeof useTranslation>['t'] }) => {
+	const isDark = useIsDark();
+	return (
+		<div className="flex items-center gap-3">
+			<Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--cortex-brand, #6b5bff)' }} />
+			<span style={{ color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))' }}>{t('express.detecting')}</span>
+		</div>
+	);
+};
 
 const InstallConfirmPanel = ({ t, hardware, pack, onConfirm, onDecline }: {
 	t: ReturnType<typeof useTranslation>['t'];
@@ -392,8 +396,8 @@ const InstallConfirmPanel = ({ t, hardware, pack, onConfirm, onDecline }: {
 			<div
 				className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm"
 				style={{
-					background: 'var(--cortex-bg-3, rgba(255,255,255,0.04))',
-					color: 'var(--cortex-fg-2, rgba(255,255,255,0.8))',
+					background: isDark ? 'var(--cortex-bg-3, rgba(255,255,255,0.04))' : 'var(--cortex-bg-3, rgba(0,0,0,0.04))',
+					color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))',
 				}}
 			>
 				<Cpu className="w-4 h-4" style={{ color: 'var(--cortex-brand, #6b5bff)' }} />
@@ -408,10 +412,10 @@ const InstallConfirmPanel = ({ t, hardware, pack, onConfirm, onDecline }: {
 			<h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--cortex-fg-0, #ffffff)' }}>
 				{t('express.installPromptTitle')}
 			</h2>
-			<p className="text-sm" style={{ color: 'var(--cortex-fg-3, rgba(255,255,255,0.6))' }}>
+			<p className="text-sm" style={{ color: isDark ? 'var(--cortex-fg-3, rgba(255,255,255,0.6))' : 'var(--cortex-fg-3, rgba(0,0,0,0.6))' }}>
 				{t('express.installPromptBody')}
 			</p>
-			<p className="text-xs mt-3" style={{ color: 'var(--cortex-fg-4, rgba(255,255,255,0.45))' }}>
+			<p className="text-xs mt-3" style={{ color: isDark ? 'var(--cortex-fg-4, rgba(255,255,255,0.45))' : 'var(--cortex-fg-4, rgba(0,0,0,0.45))' }}>
 				{pack.label} ({pack.tag}) - {pack.description}
 			</p>
 		</div>
@@ -419,14 +423,19 @@ const InstallConfirmPanel = ({ t, hardware, pack, onConfirm, onDecline }: {
 			<button
 				type="button"
 				onClick={onConfirm}
-				className="btn btn-primary flex-1 px-4 py-2.5 font-medium"
+				className="flex-1 px-4 py-2.5 rounded-xl font-medium text-white transition-transform hover:translate-y-[-1px]"
+				style={{ background: 'var(--cortex-brand, #6b5bff)' }}
 			>
 				{t('express.installConfirm')}
 			</button>
 			<button
 				type="button"
 				onClick={onDecline}
-				className="btn btn-secondary flex-1 px-4 py-2.5 font-medium"
+				className="flex-1 px-4 py-2.5 rounded-xl font-medium transition-colors"
+				style={{
+					border: isDark ? '1px solid var(--cortex-border-3, rgba(255,255,255,0.1))' : '1px solid var(--cortex-border-3, rgba(0,0,0,0.1))',
+					color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))',
+				}}
 			>
 				{t('express.installDecline')}
 			</button>
@@ -434,12 +443,15 @@ const InstallConfirmPanel = ({ t, hardware, pack, onConfirm, onDecline }: {
 	</div>
 );
 
-const InstallingPanel = ({ t }: { t: ReturnType<typeof useTranslation>['t'] }) => (
-	<div className="flex items-center gap-3">
-		<Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--cortex-brand, #6b5bff)' }} />
-		<span style={{ color: 'var(--cortex-fg-2, rgba(255,255,255,0.8))' }}>{t('express.installing')}</span>
-	</div>
-);
+const InstallingPanel = ({ t }: { t: ReturnType<typeof useTranslation>['t'] }) => {
+	const isDark = useIsDark();
+	return (
+		<div className="flex items-center gap-3">
+			<Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--cortex-brand, #6b5bff)' }} />
+			<span style={{ color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))' }}>{t('express.installing')}</span>
+		</div>
+	);
+};
 
 const PullingPanel = ({ t, modelTag, percent, status }: {
 	t: ReturnType<typeof useTranslation>['t'];
@@ -450,13 +462,13 @@ const PullingPanel = ({ t, modelTag, percent, status }: {
 	<div className="space-y-4">
 		<div className="flex items-center gap-3">
 			<Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--cortex-brand, #6b5bff)' }} />
-			<span style={{ color: 'var(--cortex-fg-2, rgba(255,255,255,0.8))' }}>
+			<span style={{ color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))' }}>
 				{interpolate(t('express.pullingPercent'), modelTag, percent)}
 			</span>
 		</div>
 		<div
 			className="w-full h-2 rounded-full overflow-hidden"
-			style={{ background: 'var(--cortex-bg-3, rgba(255,255,255,0.06))' }}
+			style={{ background: isDark ? 'var(--cortex-bg-3, rgba(255,255,255,0.06))' : 'var(--cortex-bg-3, rgba(0,0,0,0.06))' }}
 		>
 			<div
 				className="h-full rounded-full transition-all duration-300"
@@ -467,7 +479,7 @@ const PullingPanel = ({ t, modelTag, percent, status }: {
 			/>
 		</div>
 		{status && (
-			<div className="text-xs" style={{ color: 'var(--cortex-fg-4, rgba(255,255,255,0.45))' }}>
+			<div className="text-xs" style={{ color: isDark ? 'var(--cortex-fg-4, rgba(255,255,255,0.45))' : 'var(--cortex-fg-4, rgba(0,0,0,0.45))' }}>
 				{status}
 			</div>
 		)}
@@ -477,28 +489,32 @@ const PullingPanel = ({ t, modelTag, percent, status }: {
 const ReadyPanel = ({ t, onStart }: {
 	t: ReturnType<typeof useTranslation>['t'];
 	onStart: () => void;
-}) => (
-	<div className="space-y-4">
-		<div className="flex items-center gap-3">
-			<div
-				className="w-9 h-9 rounded-xl flex items-center justify-center"
-				style={{ background: 'rgba(16, 185, 129, 0.18)' }}
-			>
-				<Check className="w-5 h-5" style={{ color: 'rgb(52, 211, 153)' }} />
+}) => {
+	const isDark = useIsDark();
+	return (
+		<div className="space-y-4">
+			<div className="flex items-center gap-3">
+				<div
+					className="w-9 h-9 rounded-xl flex items-center justify-center"
+					style={{ background: 'rgba(16, 185, 129, 0.18)' }}
+				>
+					<Check className="w-5 h-5" style={{ color: 'rgb(52, 211, 153)' }} />
+				</div>
+				<span className="text-base font-medium" style={{ color: isDark ? 'var(--cortex-fg-0, #ffffff)' : 'var(--cortex-fg-0, #1a1a1a)' }}>
+					{t('express.ready')}
+				</span>
 			</div>
-			<span className="text-base font-medium" style={{ color: 'var(--cortex-fg-0, #ffffff)' }}>
-				{t('express.ready')}
-			</span>
+			<button
+				type="button"
+				onClick={onStart}
+				className="w-full px-4 py-2.5 rounded-xl font-medium text-white transition-transform hover:translate-y-[-1px]"
+				style={{ background: 'var(--cortex-brand, #6b5bff)' }}
+			>
+				{t('express.startChatting')}
+			</button>
 		</div>
-		<button
-			type="button"
-			onClick={onStart}
-			className="btn btn-primary w-full px-4 py-2.5 font-medium"
-		>
-			{t('express.startChatting')}
-		</button>
-	</div>
-);
+	);
+};
 
 const GroqFallbackPanel = ({ t, apiKey, onApiKeyChange, onSubmit, errorMessage }: {
 	t: ReturnType<typeof useTranslation>['t'];
@@ -512,7 +528,7 @@ const GroqFallbackPanel = ({ t, apiKey, onApiKeyChange, onSubmit, errorMessage }
 			<h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--cortex-fg-0, #ffffff)' }}>
 				{t('express.fallbackTitle')}
 			</h2>
-			<p className="text-sm" style={{ color: 'var(--cortex-fg-3, rgba(255,255,255,0.6))' }}>
+			<p className="text-sm" style={{ color: isDark ? 'var(--cortex-fg-3, rgba(255,255,255,0.6))' : 'var(--cortex-fg-3, rgba(0,0,0,0.6))' }}>
 				{t('express.fallbackBody')}
 			</p>
 		</div>
@@ -521,7 +537,12 @@ const GroqFallbackPanel = ({ t, apiKey, onApiKeyChange, onSubmit, errorMessage }
 			href={GROQ_KEYS_URL}
 			target="_blank"
 			rel="noopener noreferrer"
-			className="btn btn-secondary inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium"
+			className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+			style={{
+				border: isDark ? '1px solid var(--cortex-border-3, rgba(255,255,255,0.1))' : '1px solid var(--cortex-border-3, rgba(0,0,0,0.1))',
+				color: isDark ? 'var(--cortex-fg-1, rgba(255,255,255,0.9))' : 'var(--cortex-fg-1, rgba(0,0,0,0.9))',
+				background: isDark ? 'var(--cortex-bg-3, rgba(255,255,255,0.04))' : 'var(--cortex-bg-3, rgba(0,0,0,0.04))',
+			}}
 		>
 			<ExternalLink className="w-4 h-4" />
 			{t('express.openGroqKeyPage')}
@@ -535,7 +556,12 @@ const GroqFallbackPanel = ({ t, apiKey, onApiKeyChange, onSubmit, errorMessage }
 				value={apiKey}
 				onChange={(e) => onApiKeyChange(e.target.value)}
 				placeholder={t('express.pasteKeyPlaceholder')}
-				className="input w-full px-3 py-2.5 text-sm font-mono outline-none"
+				className="w-full px-3 py-2.5 rounded-xl text-sm font-mono outline-none"
+				style={{
+					background: isDark ? 'var(--cortex-bg-3, rgba(255,255,255,0.04))' : 'var(--cortex-bg-3, rgba(0,0,0,0.04))',
+					border: isDark ? '1px solid var(--cortex-border-3, rgba(255,255,255,0.1))' : '1px solid var(--cortex-border-3, rgba(0,0,0,0.1))',
+					color: 'var(--cortex-fg-0, #ffffff)',
+				}}
 			/>
 			{errorMessage && (
 				<p className="text-xs" style={{ color: 'rgb(248, 113, 113)' }}>{errorMessage}</p>
@@ -546,7 +572,8 @@ const GroqFallbackPanel = ({ t, apiKey, onApiKeyChange, onSubmit, errorMessage }
 			type="button"
 			onClick={onSubmit}
 			disabled={!apiKey.trim()}
-			className="btn btn-primary w-full px-4 py-2.5 font-medium"
+			className="w-full px-4 py-2.5 rounded-xl font-medium text-white transition-transform disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:translate-y-[-1px]"
+			style={{ background: 'var(--cortex-brand, #6b5bff)' }}
 		>
 			{t('express.useGroqKey')}
 		</button>
@@ -558,26 +585,34 @@ const ErrorPanel = ({ t, message, onRetry, onFallback }: {
 	message: string;
 	onRetry: () => void;
 	onFallback: () => void;
-}) => (
-	<div className="space-y-4">
-		<p className="text-sm" style={{ color: 'var(--cortex-fg-2, rgba(255,255,255,0.8))' }}>
-			{message}
-		</p>
-		<div className="flex flex-col sm:flex-row gap-2">
-			<button
-				type="button"
-				onClick={onRetry}
-				className="btn btn-primary flex-1 px-4 py-2.5 font-medium"
-			>
-				{t('express.retry')}
-			</button>
-			<button
-				type="button"
-				onClick={onFallback}
-				className="btn btn-secondary flex-1 px-4 py-2.5 font-medium"
-			>
-				{t('express.useCloudInstead')}
-			</button>
+}) => {
+	const isDark = useIsDark();
+	return (
+		<div className="space-y-4">
+			<p className="text-sm" style={{ color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))' }}>
+				{message}
+			</p>
+			<div className="flex flex-col sm:flex-row gap-2">
+				<button
+					type="button"
+					onClick={onRetry}
+					className="flex-1 px-4 py-2.5 rounded-xl font-medium text-white transition-transform hover:translate-y-[-1px]"
+					style={{ background: 'var(--cortex-brand, #6b5bff)' }}
+				>
+					{t('express.retry')}
+				</button>
+				<button
+					type="button"
+					onClick={onFallback}
+					className="flex-1 px-4 py-2.5 rounded-xl font-medium transition-colors"
+					style={{
+						border: isDark ? '1px solid var(--cortex-border-3, rgba(255,255,255,0.1))' : '1px solid var(--cortex-border-3, rgba(0,0,0,0.1))',
+						color: isDark ? 'var(--cortex-fg-2, rgba(255,255,255,0.8))' : 'var(--cortex-fg-2, rgba(0,0,0,0.8))',
+					}}
+				>
+					{t('express.useCloudInstead')}
+				</button>
+			</div>
 		</div>
-	</div>
-);
+	);
+};

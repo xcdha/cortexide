@@ -111,53 +111,6 @@ export const toOpenAICompatibleTool = (toolInfo: InternalToolInfo) => {
 	}
 }
 
-export type SpecialToolFormat = 'openai-style' | 'anthropic-style' | 'gemini-style' | undefined
-
-/**
- * Local inference (Ollama, vLLM, LM Studio, loopback openAICompatible) parses tool calls from
- * XML/JSON text in the message body — never via native provider tool APIs. When both XML tool
- * definitions (system prompt) and a native `tools[]` array are sent, servers like llama.cpp reject
- * the request (issue #45). Force XML/text mode by clearing specialToolFormat for local providers.
- */
-export const effectiveSpecialToolFormat = (
-	specialToolFormat: SpecialToolFormat,
-	isLocalInference: boolean,
-): SpecialToolFormat => isLocalInference ? undefined : specialToolFormat
-
-/** Ollama /api/chat message — content is string; optional base64 images for vision models. */
-export type OllamaChatMessage = { role: string; content: string; images?: string[] }
-
-/** Strip data-URL prefix from base64 image payloads for Ollama's `images` field. */
-export const base64FromDataUrl = (url: string): string =>
-	url.startsWith('data:') ? url.replace(/^data:[^;]+;base64,/, '') : url
-
-/**
- * Flatten OpenAI-format messages for Ollama's native /api/chat.
- * Text parts join into `content`; image_url parts become base64 `images` (vision models).
- */
-export const convertOpenAIMessagesToOllamaChat = (messages: LLMChatMessage[]): OllamaChatMessage[] =>
-	messages.map((m) => {
-		const c = (m as { content?: unknown }).content
-		let content = ''
-		const images: string[] = []
-		if (typeof c === 'string') {
-			content = c
-		} else if (Array.isArray(c)) {
-			for (const part of c) {
-				if (typeof part === 'string') { content += part }
-				else if (part?.type === 'text') { content += part.text ?? '' }
-				else if (part?.type === 'image_url' && part.image_url?.url) {
-					images.push(base64FromDataUrl(part.image_url.url))
-				}
-			}
-		} else {
-			content = c == null ? '' : String(c)
-		}
-		const out: OllamaChatMessage = { role: (m as { role: string }).role, content }
-		if (images.length) { out.images = images }
-		return out
-	})
-
 /**
  * The running accumulator for an OpenAI-compatible streaming chat response: text, reasoning, and the
  * single tool call (name / args-JSON-string / id) assembled across deltas. The OpenAI streaming

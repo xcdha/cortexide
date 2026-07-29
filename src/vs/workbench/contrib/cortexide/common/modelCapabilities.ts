@@ -52,6 +52,7 @@ export const defaultProviderSettings = {
 		endpoint: '',
 		apiKey: '',
 		headersJSON: '{}', // default to {}
+		connections: [], // named connection list
 	},
 	gemini: {
 		apiKey: '',
@@ -670,19 +671,6 @@ const extensiveModelOptionsFallback: VoidStaticProviderInfo['modelOptionsFallbac
 	if (lower.includes('starcoder2')) return toFallback(openSourceModelOptions_assumingOAICompat, 'starcoder2')
 
 	if (lower.includes('openhands')) return toFallback(openSourceModelOptions_assumingOAICompat, 'openhands-lm-32b') // max output uncler
-
-	// Vercel v0 models (OpenAI-compatible API) need native OpenAI multimodal format (issue #1).
-	if (/\bv0[\d.-]/.test(lower) || lower.startsWith('v0-') || lower.includes('v0-preview') || lower.includes('v0-1.5')) {
-		return {
-			...unrecognizedModelDefaults('openAICompatible'),
-			modelName,
-			recognizedModelName: 'v0',
-			specialToolFormat: 'openai-style',
-			supportsSystemMessage: 'system-role',
-			contextWindow: 128_000,
-			reservedOutputTokenSpace: 8_192,
-		};
-	}
 
 	if (lower.includes('quasar') || lower.includes('quaser')) return toFallback(openSourceModelOptions_assumingOAICompat, 'quasar')
 

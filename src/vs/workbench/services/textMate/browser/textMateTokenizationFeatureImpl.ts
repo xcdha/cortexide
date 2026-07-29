@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { canASAR, importAMDNodeModule, resolveAmdNodeModulePath } from '../../../../amdX.js';
+import { importAMDNodeModule, resolveAmdNodeModulePath } from '../../../../amdX.js';
 import * as domStylesheets from '../../../../base/browser/domStylesheets.js';
 import { equals as equalArray } from '../../../../base/common/arrays.js';
 import { Color } from '../../../../base/common/color.js';
@@ -399,10 +399,40 @@ export class TextMateTokenizationFeature extends Disposable implements ITextMate
 			// We therefore use the non-streaming compiler :(.
 			return await response.arrayBuffer();
 		} else {
-			const response = await fetch(canASAR && this._environmentService.isBuilt
+			// FileAccess.asBrowserUri may generate URLs with .. that vscode-file:// protocol rejects.
+			// Try it first, then fall back to constructing URL from window.location.
+			const wasmUri = this._environmentService.isBuilt
 				? FileAccess.asBrowserUri(`${nodeModulesAsarUnpackedPath}/vscode-oniguruma/release/onig.wasm`).toString(true)
-				: FileAccess.asBrowserUri(`${nodeModulesPath}/vscode-oniguruma/release/onig.wasm`).toString(true));
-			return response;
+				: FileAccess.asBrowserUri(`${nodeModulesPath}/vscode-oniguruma/release/onig.wasm`).toString(true);
+			try {
+				const response = await fetch(wasmUri);
+				return await response.arrayBuffer();
+			} catch {
+				// Construct URL from window.location to get a valid absolute path without ..
+				const loc = window.location.href;
+				const match = loc.match(/vscode-file:\/\/vscode-app\/(.*?)\/vs\/code\//);
+				if (match) {
+					const appRootPath = decodeURIComponent(match[1]);
+					// node_modules is in the project root, not in out/ subdirectory
+					const projectRoot = appRootPath.replace(/\/out$/, '');
+					const fallbackUri = `vscode-file://vscode-app/${projectRoot}/node_modules/vscode-oniguruma/release/onig.wasm`;
+					try {
+						const response = await fetch(fallbackUri);
+						return await response.arrayBuffer();
+					} catch {
+						// Last resort: XHR
+						return await new Promise<ArrayBuffer>((resolve, reject) => {
+							const xhr = new XMLHttpRequest();
+							xhr.open('GET', fallbackUri, true);
+							xhr.responseType = 'arraybuffer';
+							xhr.onload = () => resolve(xhr.response);
+							xhr.onerror = () => reject(new Error('Failed to load onig.wasm'));
+							xhr.send();
+						});
+					}
+				}
+				throw new Error('Failed to load onig.wasm');
+			}
 		}
 	}
 

@@ -56,13 +56,15 @@ export class ElectronPtyHostStarter extends Disposable implements IPtyHostStarte
 			`--inspect${inspectParams.break ? '-brk' : ''}=${inspectParams.port}`
 		] : undefined;
 
+		const ptyEnv = this._createPtyHostConfiguration();
+
 		this.utilityProcess.start({
 			type: 'ptyHost',
 			name: 'pty-host',
 			entryPoint: 'vs/platform/terminal/node/ptyHostMain',
 			execArgv,
 			args: ['--logsPath', this._environmentMainService.logsHome.with({ scheme: Schemas.file }).fsPath],
-			env: this._createPtyHostConfiguration()
+			env: ptyEnv
 		});
 
 		const port = this.utilityProcess.connect();
@@ -94,6 +96,10 @@ export class ElectronPtyHostStarter extends Disposable implements IPtyHostStarte
 			VSCODE_RECONNECT_SHORT_GRACE_TIME: String(this._reconnectConstants.shortGraceTime),
 			VSCODE_RECONNECT_SCROLLBACK: String(this._reconnectConstants.scrollback),
 		};
+		// Remove ELECTRON_RUN_AS_NODE so pty host runs as Electron process, not Node.js
+		delete config.ELECTRON_RUN_AS_NODE;
+		// Remove VSCODE_DEV to ensure NLS works in pty host
+		delete config.VSCODE_DEV;
 		const simulatedLatency = this._configurationService.getValue(TerminalSettingId.DeveloperPtyHostLatency);
 		if (simulatedLatency && isNumber(simulatedLatency)) {
 			config.VSCODE_LATENCY = String(simulatedLatency);
@@ -109,7 +115,11 @@ export class ElectronPtyHostStarter extends Disposable implements IPtyHostStarte
 	private _onWindowConnection(e: IpcMainEvent, nonce: string) {
 		this._onRequestConnection.fire();
 
-		const port = this.utilityProcess!.connect();
+		if (!this.utilityProcess) {
+			return;
+		}
+
+		const port = this.utilityProcess.connect();
 
 		// Check back if the requesting window meanwhile closed
 		// Since shared process is delayed on startup there is

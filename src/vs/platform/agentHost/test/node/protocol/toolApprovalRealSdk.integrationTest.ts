@@ -27,12 +27,11 @@ import { mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { removeAnsiEscapeCodes } from '../../../../../base/common/strings.js';
 import { URI } from '../../../../../base/common/uri.js';
-import type { SessionToolCallStartAction } from '../../../common/state/protocol/actions.js';
+import type { RootAgentsChangedAction, SessionAddedNotification, SessionInputRequestedAction, SessionResponsePartAction, SessionToolCallReadyAction, SessionToolCallStartAction } from '../../../common/state/sessionActions.js';
 import { SubscribeResult } from '../../../common/state/protocol/commands.js';
 import { PROTOCOL_VERSION } from '../../../common/state/sessionCapabilities.js';
 import { ResponsePartKind, ROOT_STATE_URI, SessionInputAnswerState, SessionInputAnswerValueKind, SessionInputQuestionKind, SessionInputResponseKind, ToolResultContentType, isSubagentSession, type SessionInputAnswer, type SessionInputRequest, type SessionState, type TerminalState, type ToolResultContent, type ToolResultSubagentContent } from '../../../common/state/sessionState.js';
 import type { RootState } from '../../../common/state/protocol/state.js';
-import type { RootAgentsChangedAction, SessionAddedNotification, SessionInputRequestedAction, SessionResponsePartAction, SessionToolCallReadyAction } from '../../../common/state/sessionActions.js';
 import type { INotificationBroadcastParams } from '../../../common/state/sessionProtocol.js';
 import {
 	getActionEnvelope,

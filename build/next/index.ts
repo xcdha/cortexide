@@ -637,14 +637,19 @@ function inlineMinimistPlugin(): esbuild.Plugin {
 }
 
 function cssExternalPlugin(): esbuild.Plugin {
-	// Mark CSS imports as external so they stay as import statements
-	// The CSS files are copied separately and loaded by the browser at runtime
+	// For transpile mode: replace CSS imports with empty JS modules
+	// This prevents "MIME type text/css" errors when loading as ES modules
+	// CSS files are copied separately and loaded via <link> tags at runtime
 	return {
 		name: 'css-external',
 		setup(build) {
 			build.onResolve({ filter: /\.css$/ }, (args) => ({
 				path: args.path,
-				external: true,
+				namespace: 'css-stub',
+			}));
+			build.onLoad({ filter: /\.css$/, namespace: 'css-stub' }, () => ({
+				contents: 'export default ""',
+				loader: 'js',
 			}));
 		},
 	};
@@ -746,7 +751,9 @@ async function transpileFile(srcPath: string, destPath: string): Promise<void> {
 
 	await fs.promises.mkdir(path.dirname(destPath), { recursive: true });
 
-	const adjustedCode = adjustEsmUrl(result.code);
+	let adjustedCode = adjustEsmUrl(result.code);
+	// Remove CSS imports to prevent MIME type errors in ES module loading
+	adjustedCode = adjustedCode.replace(/^\s*import\s+['"][^'"]+\.css['"]\s*;?\s*$/gm, '');
 	await fs.promises.writeFile(destPath, adjustedCode);
 }
 

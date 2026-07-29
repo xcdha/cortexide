@@ -18,25 +18,10 @@ import ErrorBoundary from '../sidebar-tsx/ErrorBoundary.js';
 import { FileAccess } from '../../../../../../../base/common/network.js';
 import { LocalSetupWizard } from './LocalSetupWizard.js';
 import { ExpressOnboardingFlow } from './ExpressOnboardingFlow.js';
-import { applyLlamaServerPreset, tryAutoAssignAutocompleteModel, tryAutoAssignChatModel } from '../../../../common/onboardingHelpers.js';
 
 const OVERRIDE_VALUE = false
 
-const getHeroLogoUri = () => FileAccess.asBrowserUri('vs/workbench/browser/media/code-icon.svg').toString(true)
-
-const welcomeHighlights = [
-	'Chat + Quick Edit',
-	'Fast Apply diffs',
-	'PDF & image uploads',
-	'Local & cloud models',
-];
-
-const welcomeStats = [
-	{ label: 'Uploads', value: 'PDFs + Images', detail: 'Drop specs, screenshots, and research straight into chat' },
-	{ label: 'Fast Apply', value: 'Line-by-line', detail: 'Approve every change from the diff that generated it' },
-	{ label: 'Model router', value: 'Auto-switch', detail: 'Chooses Anthropic, GPT-4o, Gemini, DeepSeek, or Ollama per task' },
-	{ label: 'Agent tools', value: `${builtinToolCount} built-ins`, detail: 'File edits, terminal, web search, LSP navigation, code review, and more' },
-];
+const getHeroLogoUri = () => FileAccess.asBrowserUri('vs/workbench/browser/media/cortexide-main.png').toString(true)
 
 export const VoidOnboarding = () => {
 
@@ -71,35 +56,51 @@ export const VoidOnboarding = () => {
 
 	return (
 		<div className={`@@void-scope ${isDark ? 'dark' : ''}`}>
+			<style>{`
+				.void-onboarding-scroll {
+					scrollbar-width: none !important;
+				}
+				.void-onboarding-scroll:hover {
+					scrollbar-width: thin !important;
+					scrollbar-color: ${isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} transparent !important;
+				}
+				.void-onboarding-scroll::-webkit-scrollbar {
+					width: 6px !important;
+					height: 6px !important;
+				}
+				.void-onboarding-scroll::-webkit-scrollbar-track {
+					background: transparent !important;
+				}
+				.void-onboarding-scroll::-webkit-scrollbar-thumb {
+					background-color: transparent !important;
+					border-radius: 3px !important;
+				}
+				.void-onboarding-scroll:hover::-webkit-scrollbar-thumb {
+					background-color: ${isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'} !important;
+				}
+			`}</style>
 			<div
 				className={`
-					cortex-onboarding-root fixed inset-0 z-[99999] flex items-start justify-center px-6 py-12
-					backdrop-blur-[28px]
-					overflow-y-auto
-					transition-all duration-700 ease-in-out
-					${isOnboardingComplete ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 pointer-events-auto'}
+					fixed inset-0 z-[99999] flex items-center justify-center px-6 py-12
+					bg-transparent
+					overflow-y-auto onboarding-scroll
+					transition-all duration-300 ease-in-out
+					${isOnboardingComplete ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}
 				`}
-				style={{
-					backgroundColor: 'var(--vscode-editor-background, #050507)',
-					backgroundImage: 'radial-gradient(circle at 18% -15%, rgba(255,255,255,0.06), transparent 55%), radial-gradient(circle at 82% 0%, rgba(0,0,0,0.55), transparent 50%)',
-				}}
 			>
 				<ErrorBoundary>
-					<div className="w-full max-w-[1200px] py-6">
-						{showExpressFlow ? (
-							<ExpressOnboardingFlow
-								onCustomize={() => setUseExpressFlow(false)}
-								onDismiss={() => {
-									// "Skip for now" / "Start chatting" - mark onboarding complete so
-									// the overlay closes. The full settings pane remains reachable
-									// for later configuration.
-									settingsService.setGlobalSetting('isOnboardingComplete', true)
-								}}
-							/>
-						) : (
+					{showExpressFlow ? (
+						<ExpressOnboardingFlow
+							onCustomize={() => setUseExpressFlow(false)}
+							onDismiss={() => {
+								settingsService.setGlobalSetting('isOnboardingComplete', true)
+							}}
+						/>
+					) : (
+						<div className="w-full max-w-[1000px]">
 							<VoidOnboardingContent />
-						)}
-					</div>
+						</div>
+					)}
 				</ErrorBoundary>
 			</div>
 		</div>
@@ -108,8 +109,9 @@ export const VoidOnboarding = () => {
 
 const VoidIcon = () => {
 	const heroLogoUri = useMemo(() => getHeroLogoUri(), []);
+	const isDark = useIsDark();
 	return (
-		<div className="w-full max-w-[220px] aspect-square rounded-full border border-white/10 bg-black shadow-[0_45px_120px_rgba(0,0,0,0.95)] overflow-hidden">
+		<div className={`w-full max-w-[220px] aspect-square rounded-full border ${isDark ? 'border-white/10 bg-black' : 'border-black/10 bg-white'} shadow-[0_45px_120px_rgba(0,0,0,0.95)] overflow-hidden`}>
 			<img
 				src={heroLogoUri}
 				alt="CortexIDE logo"
@@ -168,37 +170,56 @@ const cloudProviders: ProviderName[] = ['googleVertex', 'liteLLM', 'microsoftAzu
 
 const freeProviders: ProviderName[] = ['gemini', 'openRouter', 'pollinations', 'moonshot'];
 
-const localTabProviders: ProviderName[] = [...localProviderNames, 'openAICompatible'];
-
 // Data structures for provider tabs
 const providerNamesOfTab: Record<TabName, ProviderName[]> = {
 	Free: freeProviders,
-	Local: localTabProviders,
+	Local: localProviderNames,
 	Paid: providerNames.filter(pn => !([...freeProviders, ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
 	'Cloud/Other': cloudProviders,
 };
 
-const descriptionOfTab: Record<TabName, string> = {
-	Free: `Providers with a 100% free tier. Add as many as you'd like!`,
-	Paid: `Connect directly with any provider (bring your own key).`,
-	Local: `Active providers should appear automatically. Add as many as you'd like! `,
-	'Cloud/Other': `Add as many as you'd like! Reach out for custom configuration requests.`,
-};
 
-
-const featureNameMap: { display: string, featureName: FeatureName }[] = [
-	{ display: 'Chat', featureName: 'Chat' },
-	{ display: 'Quick Edit', featureName: 'Ctrl+K' },
-	{ display: 'Autocomplete', featureName: 'Autocomplete' },
-	{ display: 'Fast Apply', featureName: 'Apply' },
-	{ display: 'Source Control', featureName: 'SCM' },
+const featureNameMap: { featureName: FeatureName }[] = [
+	{ featureName: 'Chat' },
+	{ featureName: 'Ctrl+K' },
+	{ featureName: 'Autocomplete' },
+	{ featureName: 'Apply' },
+	{ featureName: 'SCM' },
 ];
 
+const featureDisplayName = (featureName: FeatureName, t: (key: any) => string): string => {
+	switch (featureName) {
+		case 'Chat': return t('onboarding.feature.chat');
+		case 'Ctrl+K': return t('onboarding.feature.quickEdit');
+		case 'Autocomplete': return t('onboarding.feature.autocomplete');
+		case 'Apply': return t('onboarding.feature.fastApply');
+		case 'SCM': return t('onboarding.feature.sourceControl');
+	}
+};
+
+const tabDisplayName = (tab: TabName, t: (key: any) => string): string => {
+	switch (tab) {
+		case 'Free': return t('onboarding.tab.free');
+		case 'Paid': return t('onboarding.tab.paid');
+		case 'Local': return t('onboarding.tab.local');
+		case 'Cloud/Other': return t('onboarding.tab.cloudOther');
+	}
+};
+
+const tabDescription = (tab: TabName, t: (key: any) => string): string => {
+	switch (tab) {
+		case 'Free': return t('onboarding.tab.free.desc');
+		case 'Paid': return t('onboarding.tab.paid.desc');
+		case 'Local': return t('onboarding.tab.local.desc');
+		case 'Cloud/Other': return t('onboarding.tab.cloudOther.desc');
+	}
+};
+
 const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setPageIndex: (index: number) => void }) => {
+	const { t } = useTranslation();
+	const isDark = useIsDark();
 	const [currentTab, setCurrentTab] = useState<TabName>('Free');
 	const settingsState = useSettingsState();
-	const accessor = useAccessor();
-	const settingsService = accessor.get('ICortexideSettingsService');
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [showLocalWizard, setShowLocalWizard] = useState(false);
 
@@ -223,45 +244,50 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 	return (
 		<div className="flex flex-col gap-8 w-full min-h-[75vh] max-w-[1000px] mx-auto">
 			<div className="space-y-2 text-center md:text-left">
-				<p className="text-xs uppercase tracking-[0.35em] text-void-fg-4">Step 02</p>
-				<h2 className="text-4xl font-light text-void-fg-0">Choose your model providers</h2>
+				<p className="text-xs uppercase tracking-[0.35em] text-void-fg-4">{t('onboarding.step02')}</p>
+				<h2 className="text-4xl font-light text-void-fg-0">{t('onboarding.chooseProviders')}</h2>
 				<p className="text-base text-void-fg-3 max-w-2xl mx-auto md:mx-0">
-					Load multiple providers at once. CortexIDE can route Chat, Quick Edit, and Autocomplete to the strongest model on every request.
+					{t('onboarding.chooseProvidersDesc')}
 				</p>
 			</div>
 
 			<div className="flex flex-col md:flex-row flex-1 gap-6">
 				{/* Left rail */}
-				<div className="md:w-1/3 w-full flex flex-col gap-6 p-6 cortex-card h-full overflow-y-auto">
+				<div className={`md:w-1/3 w-full flex flex-col gap-6 p-5 rounded-[28px] border border-void-border-3 bg-void-bg-2 shadow-[0_20px_60px_rgba(0,0,0,${isDark ? 0.25 : 0.1})] h-full overflow-y-auto onboarding-scroll`}>
 					<div className="flex flex-wrap md:flex-col gap-2">
 						{[...tabNames, 'Cloud/Other'].map(tab => (
 							<button
-								type="button"
 								key={tab}
-								className={`btn w-full text-left px-4 py-3 text-sm font-medium tracking-wide ${currentTab === tab ? 'btn-primary' : 'btn-secondary'}`}
+								className={`
+									w-full rounded-2xl px-4 py-3 text-left text-sm font-medium tracking-wide transition-all duration-200
+									${currentTab === tab
+										? 'bg-gradient-to-r from-[#0e70c0] to-[#6b5bff] text-white shadow-[0_18px_40px_rgba(28,107,219,0.35)]'
+										: 'bg-void-bg-3 text-void-fg-2 border border-void-border-3 hover:border-void-border-1'}
+								`}
 								onClick={() => {
 									setCurrentTab(tab as TabName);
 									setErrorMessage(null);
 								}}
 							>
-								{tab}
+								{tabDisplayName(tab, t)}
 							</button>
 						))}
 					</div>
 
 					<div className="grid gap-3 mt-2 text-sm">
-						<p className="uppercase text-[11px] tracking-[0.4em] text-void-fg-4">Feature coverage</p>
-						{featureNameMap.map(({ display, featureName }) => {
+						<p className="uppercase text-[11px] tracking-[0.4em] text-void-fg-4">{t('onboarding.featureCoverage')}</p>
+						{featureNameMap.map(({ featureName }) => {
+							const display = featureDisplayName(featureName, t);
 							const hasModel = settingsState.modelSelectionOfFeature[featureName] !== null;
 							return (
-								<div key={featureName} className="flex items-center justify-between cortex-card-muted px-4 py-3">
+								<div key={featureName} className="flex items-center justify-between rounded-2xl border border-void-border-4 bg-void-bg-3 px-4 py-3">
 									<span>{display}</span>
 									{hasModel ? (
 										<span className="inline-flex items-center gap-1 text-emerald-400 text-xs font-medium">
-											<Check className="w-4 h-4" /> Connected
+											<Check className="w-4 h-4" /> {t('onboarding.connected')}
 										</span>
 									) : (
-										<span className="text-xs text-void-fg-4">Pending</span>
+										<span className="text-xs text-void-fg-4">{t('onboarding.pending')}</span>
 									)}
 								</div>
 							);
@@ -270,37 +296,22 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 				</div>
 
 				{/* Content */}
-				<div className="flex-1 flex flex-col cortex-card p-6">
-					<div className="w-full max-w-xl mx-auto text-center mb-8 space-y-3">
-						<p className="text-xs uppercase tracking-[0.35em] text-void-fg-4">Active tab</p>
-						<div className="text-4xl font-light text-void-fg-0">{currentTab}</div>
-						<div className="text-sm text-void-fg-3">{descriptionOfTab[currentTab]}</div>
-					</div>
+				<div className={`flex-1 flex flex-col rounded-[28px] border border-void-border-3 bg-void-bg-1 shadow-[0_20px_60px_rgba(0,0,0,${isDark ? 0.25 : 0.1})] p-5`}>
+					<div className="w-full max-w-xl mx-auto text-center mb-6 space-y-2">
+					<div className="text-3xl font-light text-void-fg-0">{tabDisplayName(currentTab, t)}</div>
+					<div className="text-sm text-void-fg-3">{tabDescription(currentTab, t)}</div>
+				</div>
 
-					<div className="space-y-6 overflow-y-auto pr-1 flex-1">
+				<div className="space-y-4 overflow-y-auto onboarding-scroll pr-3 flex-1 rounded-2xl border border-void-border-4 bg-void-bg-2 p-5">
 						{currentTab === 'Local' && !showLocalWizard && (
 							<button
-								type="button"
-								className="btn btn-primary w-full flex items-center justify-between px-5 py-4 text-left"
+								className="w-full flex items-center justify-between px-5 py-4 rounded-xl border border-void-border-2 bg-void-bg-3 hover:border-void-border-1 transition-colors text-left"
 								onClick={() => setShowLocalWizard(true)}
 							>
 								<div>
-									<div className="font-semibold text-sm text-void-fg-0">Set up local AI automatically</div>
+									<div className="font-semibold text-sm text-void-fg-0">{t('onboarding.setupLocalAuto')}</div>
 									// allow-any-unicode-next-line
-									<div className="text-xs text-void-fg-3 mt-0.5">Install Ollama + download the best model for your hardware — guided setup in 2 minutes</div>
-								</div>
-								<ChevronRight size={16} className="text-void-fg-3 flex-shrink-0 ml-4" />
-							</button>
-						)}
-						{currentTab === 'Local' && !showLocalWizard && (
-							<button
-								type="button"
-								className="btn btn-secondary w-full flex items-center justify-between px-5 py-4 text-left"
-								onClick={() => { void applyLlamaServerPreset(settingsService); }}
-							>
-								<div>
-									<div className="font-semibold text-sm text-void-fg-0">Use llama-server (llama.cpp)</div>
-									<div className="text-xs text-void-fg-3 mt-0.5">Prefill OpenAI-Compatible endpoint http://127.0.0.1:8080/v1 — then add your .gguf model name below</div>
+									<div className="text-xs text-void-fg-3 mt-0.5">{t('onboarding.setupLocalAutoDesc')}</div>
 								</div>
 								<ChevronRight size={16} className="text-void-fg-3 flex-shrink-0 ml-4" />
 							</button>
@@ -314,28 +325,28 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 							</ErrorBoundary>
 						)}
 						{(!showLocalWizard) && providerNamesOfTab[currentTab].map((providerName) => (
-							<div key={providerName} className="cortex-card-muted p-5">
+							<div key={providerName} className="rounded-xl border border-void-border-3 bg-void-bg-3 p-5 transition-all duration-200 hover:border-void-border-1">
 								<div className="flex items-center justify-between mb-3">
 									<div className="text-xl font-medium text-void-fg-0 flex items-center gap-2">
-										Add {displayInfoOfProviderName(providerName).title}
+										{t('onboarding.addProvider').replace('{0}', displayInfoOfProviderName(providerName).title)}
 										{(providerName === 'gemini' || providerName === 'openRouter' || providerName === 'pollinations') && (
 											<span
 												data-tooltip-id="cortex-tooltip-provider-info"
 												data-tooltip-place="right"
 												className="text-xs text-blue-400"
 												data-tooltip-content={providerName === 'gemini'
-													? 'Gemini 2.5 Pro offers 25 free chats daily, Flash offers ~500. Upgrade later if you exhaust credits.'
+													? t('onboarding.tooltip.gemini')
 													: providerName === 'openRouter'
-														? 'OpenRouter grants 50 free chats a day (1000 with a $10 deposit) on models tagged :free.'
-														: 'Cheap API with many models (Pollen credits). Get your key at enter.pollinations.ai.'}
+														? t('onboarding.tooltip.openRouter')
+														: t('onboarding.tooltip.pollinations')}
 											>
-												Details
+												{t('onboarding.details')}
 											</span>
 										)}
 									</div>
 									{providerName === 'ollama' && (
 										<span className="inline-flex items-center gap-1 text-xs text-void-fg-3">
-											<Lock size={12} /> Local
+											<Lock size={12} /> {t('onboarding.localLabel')}
 										</span>
 									)}
 								</div>
@@ -343,7 +354,7 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 								<SettingsForProvider providerName={providerName} showProviderTitle={false} showProviderSuggestions={true} />
 
 								{providerName === 'ollama' && (
-									<div className="mt-4 cortex-card-muted bg-black/20">
+									<div className="mt-5 rounded-xl border border-void-border-4 bg-void-bg-4 p-5">
 										<OllamaSetupInstructions />
 									</div>
 								)}
@@ -352,37 +363,34 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 					</div>
 
 					{(currentTab === 'Local' || currentTab === 'Cloud/Other') && !showLocalWizard && (
-						<div className="w-full mt-6 cortex-card-muted p-6">
+						<div className="w-full mt-6 rounded-2xl border border-void-border-4 bg-void-bg-2 p-6">
 							<div className="flex items-center gap-2 mb-4">
-								<div className="text-xl font-medium">Models</div>
+								<div className="text-xl font-medium">{t('onboarding.modelsLabel')}</div>
 							</div>
 							{currentTab === 'Local' && (
-								<div className="text-sm text-void-fg-3 mb-4">Local models auto-detect when possible. Add custom entries to fine tune routing.</div>
+								<div className="text-sm text-void-fg-3 mb-4">{t('onboarding.localModelsDesc')}</div>
 							)}
-							{currentTab === 'Local' && <ModelDump filteredProviders={localTabProviders} />}
+							{currentTab === 'Local' && <ModelDump filteredProviders={localProviderNames} />}
 							{currentTab === 'Cloud/Other' && <ModelDump filteredProviders={cloudProviders} />}
 						</div>
 					)}
 
 					<div className="flex flex-col gap-3 items-end w-full mt-6">
 						{errorMessage && (
-							<div className="w-full text-sm cortex-alert-warning px-4 py-3 text-right">
+							<div className="w-full text-sm rounded-2xl border border-void-warning/30 bg-void-warning/15 text-void-warning px-4 py-3 text-right">
 								{errorMessage}
 							</div>
 						)}
 						<div className="flex items-center gap-2">
 							<PreviousButton onClick={() => setPageIndex(pageIndex - 1)} />
 							<NextButton
-								onClick={async () => {
-									let state = settingsState;
-									state = await tryAutoAssignChatModel(settingsService, state);
-									await tryAutoAssignAutocompleteModel(settingsService, state);
-									const isDisabled = isFeatureNameDisabled('Chat', settingsService.state);
+								onClick={() => {
+									const isDisabled = isFeatureNameDisabled('Chat', settingsState)
 									if (!isDisabled) {
 										setPageIndex(pageIndex + 1);
 										setErrorMessage(null);
 									} else {
-										setErrorMessage("Please connect at least one Chat-capable model before moving on.");
+										setErrorMessage(t('onboarding.connectOneModel'));
 									}
 								}}
 							/>
@@ -436,37 +444,46 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 // 		prev/next
 
 const NextButton = ({ onClick, ...props }: { onClick: () => void } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
+	const { t } = useTranslation();
 	const { disabled, className = '', ...buttonProps } = props;
+	const isDark = useIsDark();
 
 	return (
 		<button
 			type="button"
 			onClick={disabled ? undefined : onClick}
 			onDoubleClick={onClick}
-			className={`btn btn-primary inline-flex items-center gap-2 ${className}`.trim()}
-			disabled={disabled}
+			className={`
+				inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl font-semibold tracking-tight transition-all duration-300 border border-void-border-2
+				${disabled
+					? 'bg-void-bg-3 text-void-fg-4 cursor-not-allowed'
+					: `bg-gradient-to-r from-[#2a2c34] via-[#1b1c23] to-[#101117] text-white shadow-[0_25px_55px_rgba(0,0,0,${isDark ? 0.55 : 0.2})] hover:translate-y-[-1px] hover:shadow-[0_30px_70px_rgba(0,0,0,${isDark ? 0.65 : 0.25})]`}
+				${className}
+			`}
 			{...disabled && {
 				'data-tooltip-id': 'cortex-tooltip',
-				"data-tooltip-content": 'Please enter all required fields or choose another provider',
+				"data-tooltip-content": t('onboarding.fillRequired'),
 				"data-tooltip-place": 'top',
 			}}
 			{...buttonProps}
 		>
-			Next
+			{t('common.next')}
 			<ChevronRight className="w-4 h-4" />
 		</button>
 	)
 }
 
 const PreviousButton = ({ onClick, ...props }: { onClick: () => void } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
+	const { t } = useTranslation();
+	const isDark = useIsDark();
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			className="btn btn-secondary"
+			className={`px-5 py-2.5 rounded-2xl border border-void-border-2 bg-void-bg-3 text-void-fg-2 hover:text-void-fg-0 hover:border-void-border-1 transition-all duration-200`}
 			{...props}
 		>
-			Back
+			{t('common.back')}
 		</button>
 	)
 }
@@ -480,39 +497,60 @@ const OnboardingPageShell = ({ top, bottom, content, hasMaxWidth = true, classNa
 	hasMaxWidth?: boolean,
 	className?: string,
 }) => {
+	const isDark = useIsDark()
 	return (
-		<div className={`min-h-[70vh] w-full ${className}`}>
-			<div className={`
-				text-lg flex flex-col gap-6 w-full h-full mx-auto px-8 py-10 cortex-card
-				${hasMaxWidth ? 'max-w-[720px]' : ''}
-				max-h-[calc(100vh-6rem)]
-				overflow-y-auto
-			`}>
-				{top && <FadeIn className='w-full mb-auto'>{top}</FadeIn>}
-				{content && <FadeIn className='w-full my-auto'>{content}</FadeIn>}
-				{bottom && <div className='w-full pt-6'>{bottom}</div>}
+		<div className={`min-h-[50vh] w-full ${className}`}>
+				<div className={`
+						text-lg flex flex-col gap-6 w-full h-full mx-auto
+						rounded-[32px] border border-void-border-3 bg-void-bg-2
+						shadow-[0_30px_90px_rgba(0,0,0,${isDark ? 0.45 : 0.15})]
+						${hasMaxWidth ? 'max-w-[720px]' : ''}
+							max-h-[calc(100vh-6rem)]
+							overflow-hidden
+					`}>
+							<div className="overflow-y-auto onboarding-scroll h-full px-10 py-10 pr-5">
+									{top && <FadeIn className='w-full mb-auto'>{top}</FadeIn>}
+									{content && <FadeIn className='w-full my-auto'>{content}</FadeIn>}
+									{bottom && <div className='w-full pt-6'>{bottom}</div>}
+							</div>
+					</div>
 			</div>
-		</div>
 	)
 }
 
 const WelcomePage = ({ onNext, onSkip }: { onNext: () => void; onSkip: () => void }) => {
 	const { t } = useTranslation()
+	const isDark = useIsDark()
+
+	const welcomeHighlights = [
+		t('onboarding.highlights.chatQuickEdit'),
+		t('onboarding.highlights.fastApply'),
+		t('onboarding.highlights.pdfImage'),
+		t('onboarding.highlights.localCloud'),
+	];
+
+	const welcomeStats = [
+		{ label: t('onboarding.stats.uploads.label'), value: t('onboarding.stats.uploads.value'), detail: t('onboarding.stats.uploads.detail') },
+		{ label: t('onboarding.stats.fastApply.label'), value: t('onboarding.stats.fastApply.value'), detail: t('onboarding.stats.fastApply.detail') },
+		{ label: t('onboarding.stats.modelRouter.label'), value: t('onboarding.stats.modelRouter.value'), detail: t('onboarding.stats.modelRouter.detail') },
+		{ label: t('onboarding.stats.agentTools.label'), value: t('onboarding.stats.agentTools.value').replace('{0}', String(builtinToolCount)), detail: t('onboarding.stats.agentTools.detail') },
+	];
+
 	return (
 		<div className="space-y-8">
-			<div className="cortex-card-elevated px-10 py-12">
+			<div className={`rounded-[32px] border border-void-border-2 bg-void-bg-2 shadow-[0_60px_140px_rgba(0,0,0,${isDark ? 0.75 : 0.2})] px-10 py-12`}>
 				<div className="flex flex-col lg:flex-row gap-10 items-center">
 					<div className="flex-1 flex flex-col gap-6 text-center lg:text-left">
 						<p className="text-xs uppercase tracking-[0.45em] text-void-fg-4">{t('onboarding.welcome')}</p>
 						<div>
 							<h1 className="text-5xl font-light text-void-fg-0">{t('onboarding.headline')}</h1>
 							<p className="text-base text-void-fg-2 mt-3 max-w-xl mx-auto lg:mx-0">
-								CortexIDE keeps Chat, Quick Edit, Fast Apply, and source control in the same dark workspace-and it adds native PDF + image uploads so product specs and design mocks travel with every conversation.
+								{t('onboarding.welcomeDesc')}
 							</p>
 						</div>
 						<div className="flex flex-wrap gap-3 justify-center lg:justify-start">
 							{welcomeHighlights.map((highlight) => (
-								<span key={highlight} className="cortex-chip">
+								<span key={highlight} className="px-3 py-1.5 rounded-full border border-void-border-3 bg-void-bg-3 text-xs tracking-[0.3em] uppercase text-void-fg-3">
 									{highlight}
 								</span>
 							))}
@@ -524,14 +562,14 @@ const WelcomePage = ({ onNext, onSkip }: { onNext: () => void; onSkip: () => voi
 					</div>
 					<div className="flex-1 w-full flex flex-col items-center gap-6">
 						<div className="relative w-full max-w-sm aspect-square">
-							<div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent blur-3xl rounded-[32px]" />
-							<div className="relative w-full h-full cortex-card-muted flex items-center justify-center p-6">
+							<div className={`absolute inset-0 bg-gradient-to-br ${isDark ? 'from-white/10' : 'from-black/5'} via-transparent to-transparent blur-3xl rounded-[32px]`} />
+							<div className={`relative w-full h-full rounded-[28px] border border-void-border-2 bg-void-bg-3 shadow-[0_45px_110px_rgba(0,0,0,${isDark ? 0.7 : 0.15})] flex items-center justify-center p-6`}>
 								<VoidIcon />
 							</div>
 						</div>
 						<div className="grid grid-cols-2 gap-4 w-full max-w-sm">
 							{welcomeStats.map(({ label, value, detail }) => (
-								<div key={label} className="cortex-card-muted p-4 text-center text-void-fg-2">
+								<div key={label} className="rounded-2xl border border-void-border-3 bg-void-bg-3 p-4 text-center text-void-fg-2">
 									<p className="text-[11px] uppercase tracking-[0.4em] text-void-fg-4">{label}</p>
 									<p className="text-lg font-medium text-void-fg-0 mt-2">{value}</p>
 									<p className="text-xs text-void-fg-3 mt-1">{detail}</p>
@@ -560,6 +598,7 @@ const OllamaDownloadOrRemoveModelButton = ({ modelName, isModelInstalled, sizeGb
 
 
 const YesNoText = ({ val }: { val: boolean | null }) => {
+	const { t } = useTranslation();
 
 	return <div
 		className={
@@ -569,9 +608,9 @@ const YesNoText = ({ val }: { val: boolean | null }) => {
 		}
 	>
 		{
-			val === true ? "Yes"
-				: val === false ? 'No'
-					: "Yes*"
+			val === true ? t('onboarding.yes')
+				: val === false ? t('onboarding.no')
+					: t('onboarding.yesStar')
 		}
 	</div>
 
@@ -597,6 +636,7 @@ const abbreviateNumber = (num: number): string => {
 
 
 const PrimaryActionButton = ({ children, className = '', ringSize, ...props }: { children: React.ReactNode, ringSize?: undefined | 'xl' | 'screen' } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
+	const isDark = useIsDark();
 	const sizingClass = ringSize === 'xl'
 		? 'px-10 py-4 text-lg'
 		: ringSize === 'screen'
@@ -607,13 +647,20 @@ const PrimaryActionButton = ({ children, className = '', ringSize, ...props }: {
 		<button
 			type='button'
 			className={`
-				btn btn-primary inline-flex items-center justify-center gap-2 font-semibold tracking-tight leading-normal min-h-[44px] group
+				inline-flex items-center justify-center gap-2 rounded-[18px] font-semibold tracking-tight
+				text-white border border-void-border-2
+				bg-gradient-to-r from-[#3a3d47] via-[#23252c] to-[#111216]
+				shadow-[0_35px_80px_rgba(0,0,0,${isDark ? 0.6 : 0.2})]
+				hover:shadow-[0_45px_100px_rgba(0,0,0,${isDark ? 0.7 : 0.25})] hover:translate-y-[-1px]
+				focus-visible:ring-2 focus-visible:ring-offset-2 ${isDark ? 'focus-visible:ring-white/20' : 'focus-visible:ring-black/20'}
+				${isDark ? 'focus-visible:ring-offset-[#050612]' : 'focus-visible:ring-offset-[#f5f5f5]'}
+				transition-all duration-300 group
 				${sizingClass}
 				${className}
-			`.trim()}
+			`}
 			{...props}
 		>
-			<span className="inline-flex items-center gap-2">{children}</span>
+			{children}
 			<ChevronRight
 				className="transition-transform duration-300 ease-in-out group-hover:translate-x-1 group-active:translate-x-1"
 			/>
@@ -624,7 +671,13 @@ const PrimaryActionButton = ({ children, className = '', ringSize, ...props }: {
 const SecondaryActionButton = ({ children, className = '', ...props }: { children: React.ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
 	<button
 		type="button"
-		className={`btn btn-secondary ${className}`.trim()}
+		className={`
+			inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-2.5
+			border border-void-border-2 text-void-fg-2
+			hover:text-void-fg-0 hover:border-void-border-1
+			transition-all duration-200
+			${className}
+		`}
 		{...props}
 	>
 		{children}
@@ -727,17 +780,17 @@ const VoidOnboardingContent = () => {
 
 	// cannot be md
 	const basicDescOfWantToUseOption: { [wantToUseOption in WantToUseOption]: string } = {
-		smart: "Models with the best performance on benchmarks.",
-		private: "Host on your computer or local network for full data privacy.",
-		cheap: "Free and affordable options.",
+		smart: t('onboarding.wantToUse.smart.basic'),
+		private: t('onboarding.wantToUse.private.basic'),
+		cheap: t('onboarding.wantToUse.cheap.basic'),
 		all: "",
 	}
 
 	// can be md
 	const detailedDescOfWantToUseOption: { [wantToUseOption in WantToUseOption]: string } = {
-		smart: "Most intelligent and best for agent mode.",
-		private: "Private-hosted so your data never leaves your computer or network. [Email us](mailto:hello@cortexide.com) for help setting up at your company.",
-		cheap: "Use great deals like Gemini 2.5 Pro, or self-host a model with Ollama or vLLM for free.",
+		smart: t('onboarding.wantToUse.smart.detailed'),
+		private: t('onboarding.wantToUse.private.detailed'),
+		cheap: t('onboarding.wantToUse.cheap.detailed'),
 		all: "",
 	}
 
@@ -774,13 +827,12 @@ const VoidOnboardingContent = () => {
 			}
 		/>,
 		2: <OnboardingPageShell
-
 			content={
-				<div>
-					<div className="text-5xl font-light text-center">{t('onboarding.settingsAndThemes')}</div>
+				<div className="flex flex-col items-center justify-center py-8">
+					<div className="text-3xl font-light text-center text-void-fg-0">{t('onboarding.settingsAndThemes')}</div>
 
-					<div className="mt-8 text-center flex flex-col items-center gap-4 w-full max-w-md mx-auto">
-						<h4 className="text-void-fg-3 mb-4">{t('onboarding.transferSettings')}</h4>
+					<div className="mt-6 text-center flex flex-col items-center gap-3 w-full max-w-sm mx-auto">
+						<h4 className="text-sm text-void-fg-3 mb-2">{t('onboarding.transferSettings')}</h4>
 						<OneClickSwitchButton className='w-full px-4 py-2' fromEditor="VS Code" />
 						<OneClickSwitchButton className='w-full px-4 py-2' fromEditor="Cursor" />
 						<OneClickSwitchButton className='w-full px-4 py-2' fromEditor="Windsurf" />

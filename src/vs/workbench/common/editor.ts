@@ -1092,6 +1092,14 @@ export interface IEditorOpenContext {
 	newInGroup?: boolean;
 }
 
+/**
+ * Header actions descriptor for single-pane layout editors that opt in to
+ * the group's full-width header. Retained for compatibility with 1.118.1 sessions.
+ */
+export interface IEditorHeaderActions {
+	readonly instantiationService: IInstantiationService;
+}
+
 export interface IEditorIdentifier {
 	groupId: GroupIdentifier;
 	editor: EditorInput;

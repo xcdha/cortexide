@@ -15,7 +15,7 @@ import { PromptsType } from '../../../../workbench/contrib/chat/common/promptSyn
 import { type IHarnessDescriptor, type ICustomizationItem, type ICustomizationItemProvider } from '../../../../workbench/contrib/chat/common/customizationHarnessService.js';
 import type { IAgentConnection } from '../../../../platform/agentHost/common/agentService.js';
 import { ActionType } from '../../../../platform/agentHost/common/state/sessionActions.js';
-import { type AgentInfo, type CustomizationRef, type SessionCustomization, CustomizationStatus } from '../../../../platform/agentHost/common/state/sessionState.js';
+import { type AgentInfo, type Customization, type SessionCustomization, CustomizationStatus } from '../../../../platform/agentHost/common/state/sessionState.js';
 import { BUILTIN_STORAGE } from '../../chat/common/builtinPromptsStorage.js';
 import { AgentCustomizationSyncProvider } from '../../../../workbench/contrib/chat/browser/agentSessions/agentHost/agentCustomizationSyncProvider.js';
 
@@ -48,7 +48,7 @@ export class RemoteAgentCustomizationItemProvider extends Disposable implements 
 	private readonly _onDidChange = this._register(new Emitter<void>());
 	readonly onDidChange: Event<void> = this._onDidChange.event;
 
-	private _agentCustomizations: readonly CustomizationRef[];
+	private _agentCustomizations: readonly Customization[];
 	private _sessionCustomizations: readonly SessionCustomization[] | undefined;
 
 	constructor(
@@ -74,7 +74,7 @@ export class RemoteAgentCustomizationItemProvider extends Disposable implements 
 	 * Updates the baseline agent customizations (e.g. when root state
 	 * changes and agent info is refreshed).
 	 */
-	updateAgentCustomizations(customizations: readonly CustomizationRef[]): void {
+	updateAgentCustomizations(customizations: readonly Customization[]): void {
 		this._agentCustomizations = customizations;
 		this._onDidChange.fire();
 	}

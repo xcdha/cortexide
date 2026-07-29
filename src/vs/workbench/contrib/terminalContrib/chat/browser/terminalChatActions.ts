@@ -28,6 +28,7 @@ import { TerminalChatController } from './terminalChatController.js';
 import { TerminalCapability } from '../../../../../platform/terminal/common/capabilities/capabilities.js';
 import { isString } from '../../../../../base/common/types.js';
 import { CommandsRegistry } from '../../../../../platform/commands/common/commands.js';
+import { ITelemetryService } from '../../../../../platform/telemetry/common/telemetry.js';
 import { IPreferencesService, IOpenSettingsOptions } from '../../../../services/preferences/common/preferences.js';
 import { ConfigurationTarget } from '../../../../../platform/configuration/common/configuration.js';
 import { TerminalChatAgentToolsSettingId } from '../../chatAgentTools/common/terminalChatAgentToolsConfiguration.js';
@@ -317,6 +318,15 @@ registerActiveXtermAction({
 	}
 });
 
+type ViewHiddenChatTerminalsEvent = {
+	hiddenCount: number;
+};
+type ViewHiddenChatTerminalsClassification = {
+	owner: 'anthonykim1';
+	comment: 'Tracks when the user opens the hidden chat terminals UI to understand how often users need to reach into agent-owned terminals.';
+	hiddenCount: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The number of hidden chat terminals that existed when the action was invoked. A value of 1 reveals the terminal directly, while more than 1 shows a quick pick.' };
+};
+
 registerAction2(class ShowChatTerminalsAction extends Action2 {
 	constructor() {
 		super({
@@ -343,6 +353,7 @@ registerAction2(class ShowChatTerminalsAction extends Action2 {
 		const quickInputService = accessor.get(IQuickInputService);
 		const instantiationService = accessor.get(IInstantiationService);
 		const chatService = accessor.get(IChatService);
+		const telemetryService = accessor.get(ITelemetryService);
 
 		const visible = new Set<ITerminalInstance>([...groupService.instances, ...editorService.instances]);
 		const toolInstances = terminalChatService.getToolSessionTerminalInstances();
@@ -364,12 +375,17 @@ registerAction2(class ShowChatTerminalsAction extends Action2 {
 			return;
 		}
 
+		telemetryService.publicLog2<ViewHiddenChatTerminalsEvent, ViewHiddenChatTerminalsClassification>('terminal.chatViewHiddenTerminals', {
+			hiddenCount: all.size,
+		});
+
 		// If there's only one hidden terminal, show it directly without the quick pick
 		if (all.size === 1) {
 			const instance = Array.from(all.values())[0];
 			terminalService.setActiveInstance(instance);
 			await terminalService.revealTerminal(instance);
 			await terminalService.focusInstance(instance);
+			this._logRevealHiddenTerminal(telemetryService, 'single');
 			return;
 		}
 
@@ -457,6 +473,7 @@ registerAction2(class ShowChatTerminalsAction extends Action2 {
 					await terminalService.revealTerminal(instance);
 					qp.hide();
 					await terminalService.focusInstance(instance);
+					this._logRevealHiddenTerminal(telemetryService, 'quickPick');
 				} else {
 					qp.hide();
 				}
@@ -470,6 +487,107 @@ registerAction2(class ShowChatTerminalsAction extends Action2 {
 		}));
 		qp.show();
 	}
+
+	private _logRevealHiddenTerminal(telemetryService: ITelemetryService, via: 'single' | 'quickPick'): void {
+		type RevealHiddenChatTerminalEvent = {
+			via: 'single' | 'quickPick';
+		};
+		type RevealHiddenChatTerminalClassification = {
+			owner: 'anthonykim1';
+			comment: 'Tracks when the user reveals and focuses a specific hidden chat terminal, indicating they needed to interact directly with an agent-owned terminal.';
+			via: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'How the terminal was revealed: single (only one hidden terminal) or quickPick (selected from the list).' };
+		};
+		telemetryService.publicLog2<RevealHiddenChatTerminalEvent, RevealHiddenChatTerminalClassification>('terminal.chatRevealHiddenTerminal', { via });
+	}
+});
+
+
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: TerminalChatCommandId.FocusMostRecentChatTerminal,
+	weight: KeybindingWeight.WorkbenchContrib,
+	when: ChatContextKeys.inChatSession,
+	handler: async (accessor: ServicesAccessor) => {
+		const terminalChatService = accessor.get(ITerminalChatService);
+		const part = terminalChatService.getMostRecentProgressPart();
+		if (!part) {
+			return;
+		}
+		await part.focusTerminal();
+	}
+});
+
+KeybindingsRegistry.registerCommandAndKeybindingRule({
+	id: TerminalChatCommandId.FocusMostRecentChatTerminalOutput,
+	weight: KeybindingWeight.WorkbenchContrib,
+	when: ChatContextKeys.inChatSession,
+	primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyMod.Alt | KeyCode.KeyO,
+	handler: async (accessor: ServicesAccessor) => {
+		const terminalChatService = accessor.get(ITerminalChatService);
+		const part = terminalChatService.getMostRecentProgressPart();
+		if (!part) {
+			return;
+		}
+		await part.toggleOutputFromKeyboard();
+	}
+});
+
+MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
+	command: {
+		id: TerminalChatCommandId.FocusMostRecentChatTerminal,
+		title: localize('chat.focusMostRecentTerminal', 'Chat: Focus Most Recent Terminal'),
+	},
+	when: ChatContextKeys.inChatSession
+});
+
+MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
+	command: {
+		id: TerminalChatCommandId.FocusMostRecentChatTerminalOutput,
+		title: localize('chat.focusMostRecentTerminalOutput', 'Chat: Focus Most Recent Terminal Output'),
+	},
+	when: ChatContextKeys.inChatSession
+});
+
+
+CommandsRegistry.registerCommand(TerminalChatCommandId.OpenTerminalSettingsLink, async (accessor, scopeRaw: string) => {
+	const preferencesService = accessor.get(IPreferencesService);
+
+	if (scopeRaw === 'global') {
+		preferencesService.openSettings({
+			query: `@id:${ChatConfiguration.GlobalAutoApprove}`
+		});
+	} else {
+		const scope = parseInt(scopeRaw);
+		const target = !isNaN(scope) ? scope as ConfigurationTarget : undefined;
+		const options: IOpenSettingsOptions = {
+			jsonEditor: true,
+			revealSetting: {
+				key: TerminalChatAgentToolsSettingId.AutoApprove,
+			}
+		};
+		switch (target) {
+			case ConfigurationTarget.APPLICATION: preferencesService.openApplicationSettings(options); break;
+			case ConfigurationTarget.USER:
+			case ConfigurationTarget.USER_LOCAL: preferencesService.openUserSettings(options); break;
+			case ConfigurationTarget.USER_REMOTE: preferencesService.openRemoteSettings(options); break;
+			case ConfigurationTarget.WORKSPACE:
+			case ConfigurationTarget.WORKSPACE_FOLDER: preferencesService.openWorkspaceSettings(options); break;
+			default: {
+				// Fallback if something goes wrong
+				preferencesService.openSettings({
+					target: ConfigurationTarget.USER,
+					query: `@id:${TerminalChatAgentToolsSettingId.AutoApprove}`,
+				});
+				break;
+			}
+		}
+
+	}
+});
+
+CommandsRegistry.registerCommand(TerminalChatCommandId.DisableSessionAutoApproval, async (accessor, chatSessionResource: URI) => {
+	const terminalChatService = accessor.get(ITerminalChatService);
+	terminalChatService.setChatSessionAutoApproval(chatSessionResource, false);
 });
 
 

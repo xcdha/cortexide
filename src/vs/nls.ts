@@ -100,7 +100,7 @@ function lookupMessage(index: number, fallback: string | null): string {
 		if (typeof fallback === 'string') {
 			return fallback;
 		}
-		throw new Error(`!!! NLS MISSING: ${index} !!!`);
+		return `NLS(${index})`;
 	}
 	return message;
 }

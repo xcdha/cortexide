@@ -9,8 +9,6 @@ import { IProductConfiguration } from './base/common/product.js';
 import { URI } from './base/common/uri.js';
 import { generateUuid } from './base/common/uuid.js';
 
-export const canASAR = false; // TODO@esm: ASAR disabled in ESM
-
 declare const window: any;
 declare const document: any;
 declare const self: any;
@@ -46,6 +44,30 @@ class AMDModuleImporter {
 		if (this._state === AMDModuleImporterState.Uninitialized) {
 			if (globalThis.define) {
 				this._state = AMDModuleImporterState.InitializedExternal;
+				// Even when external define exists, we still need the Trusted Types policy
+				// for dynamic script loading in renderer process
+				if (this._isRenderer && !this._amdPolicy) {
+					this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP;
+					if (!this._amdPolicy) {
+						try {
+							this._amdPolicy = window.trustedTypes?.createPolicy('amdLoader', {
+								createScriptURL(value: any) {
+									if (value.startsWith(window.location.origin)) {
+										return value;
+									}
+									if (value.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`)) {
+										return value;
+									}
+									throw new Error(`[trusted_script_src] Invalid script url: ${value}`);
+								}
+							});
+						} catch (e) {
+							// amdLoader policy may already exist if created by another module
+							// In that case, we need to find it or create a fallback
+							console.warn(`[amdLoader] Failed to create Trusted Types policy: ${e}`);
+						}
+					}
+				}
 				return;
 			}
 		} else {
@@ -73,17 +95,24 @@ class AMDModuleImporter {
 		globalThis.define.amd = true;
 
 		if (this._isRenderer) {
-			this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP ?? window.trustedTypes?.createPolicy('amdLoader', {
-				createScriptURL(value: any) {
-					if (value.startsWith(window.location.origin)) {
-						return value;
-					}
-					if (value.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`)) {
-						return value;
-					}
-					throw new Error(`[trusted_script_src] Invalid script url: ${value}`);
+			this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP;
+			if (!this._amdPolicy) {
+				try {
+					this._amdPolicy = window.trustedTypes?.createPolicy('amdLoader', {
+						createScriptURL(value: any) {
+							if (value.startsWith(window.location.origin)) {
+								return value;
+							}
+							if (value.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`)) {
+								return value;
+							}
+							throw new Error(`[trusted_script_src] Invalid script url: ${value}`);
+						}
+					});
+				} catch (e) {
+					console.warn(`[amdLoader] Failed to create Trusted Types policy (internal): ${e}`);
 				}
-			});
+			}
 		} else if (this._isWebWorker) {
 			this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP ?? globalThis.trustedTypes?.createPolicy('amdLoader', {
 				createScriptURL(value: string) {
@@ -177,9 +206,16 @@ class AMDModuleImporter {
 
 	private async _nodeJSLoadScript(scriptSrc: string): Promise<DefineCall | undefined> {
 		try {
-			const fs = (await import(/* webpackIgnore: true */ /* @vite-ignore */ `${'fs'}`)).default;
-			const vm = (await import(/* webpackIgnore: true */ /* @vite-ignore */ `${'vm'}`)).default;
+			// `import('module')` is not remapped (only `fs` is), so it yields the real
+			// `module` builtin. We use its `createRequire` to obtain `fs`/`vm`: the ESM
+			// resolution hook maps `import('fs')` to the ASAR-unaware `original-fs`, but
+			// `scriptSrc` may point inside the `node_modules.asar` archive. The `fs`
+			// returned by `require` stays ASAR-aware in Electron, so it can read module
+			// files from within the archive.
 			const module = (await import(/* webpackIgnore: true */ /* @vite-ignore */ `${'module'}`)).default;
+			const nodeRequire = module.createRequire(import.meta.url);
+			const fs = nodeRequire('fs');
+			const vm = nodeRequire('vm');
 
 			const filePath = URI.parse(scriptSrc).fsPath;
 			const content = fs.readFileSync(filePath).toString();
@@ -218,7 +254,9 @@ export async function importAMDNodeModule<T>(nodeModuleName: string, pathInsideN
 		// bit of a special case for: src/vs/workbench/services/languageDetection/browser/languageDetectionWebWorker.ts
 		scriptSrc = nodeModulePath;
 	} else {
-		const useASAR = (canASAR && isBuilt && !platform.isWeb);
+		// In development mode, node_modules.asar may not exist even if commit is set.
+		// Check if the ASAR path is available before using it.
+		const useASAR = (isBuilt && (platform.isElectron || (platform.isWebWorker && platform.hasElectronUserAgent)) && globalThis._VSCODE_NODE_MODULES_ASAR_EXISTS === true);
 		const actualNodeModulesPath = (useASAR ? nodeModulesAsarPath : nodeModulesPath);
 		const resourcePath: AppResourcePath = `${actualNodeModulesPath}/${nodeModulePath}`;
 		scriptSrc = FileAccess.asBrowserUri(resourcePath).toString(true);
@@ -231,7 +269,7 @@ export async function importAMDNodeModule<T>(nodeModuleName: string, pathInsideN
 export function resolveAmdNodeModulePath(nodeModuleName: string, pathInsideNodeModule: string): string {
 	const product = globalThis._VSCODE_PRODUCT_JSON as unknown as IProductConfiguration;
 	const isBuilt = Boolean((product ?? globalThis.vscode?.context?.configuration()?.product)?.commit);
-	const useASAR = (canASAR && isBuilt && !platform.isWeb);
+	const useASAR = (isBuilt && (platform.isElectron || (platform.isWebWorker && platform.hasElectronUserAgent)) && globalThis._VSCODE_NODE_MODULES_ASAR_EXISTS === true);
 
 	const nodeModulePath = `${nodeModuleName}/${pathInsideNodeModule}`;
 	const actualNodeModulesPath = (useASAR ? nodeModulesAsarPath : nodeModulesPath);

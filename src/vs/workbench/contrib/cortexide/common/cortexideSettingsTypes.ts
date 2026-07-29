@@ -29,11 +29,21 @@ export const customSettingNamesOfProvider = (providerName: ProviderName) => {
 
 
 
+// OpenAI-Compatible named connections
+export type OpenAICompatibleConnection = {
+	id: string,           // unique identifier
+	name: string,         // human-readable name, e.g. 'Volcengine ARK'
+	endpoint: string,     // baseURL
+	apiKey: string,       // API key
+	headersJSON: string,  // custom headers (JSON string)
+}
+
 export type CortexideStatefulModelInfo = { // <-- STATEFUL
 	modelName: string,
 	type: 'default' | 'autodetected' | 'custom';
 	isHidden: boolean, // whether or not the user is hiding it (switched off)
 	parameterSize?: string, // real param count from the provider (ollama details.parameter_size, e.g. "7.6B"); lets the router prefer a true 7B over a tiny ":latest" coder
+	connectionId?: string, // associates with an openAICompatible connection
 }
 
 
@@ -171,9 +181,9 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 													providerName === 'microsoftAzure' ? 'key-...' :
 														providerName === 'awsBedrock' ? 'key-...' :
 															providerName === 'pollinations' ? 'sk-... or pk-...' :
-																	providerName === 'moonshot' ? 'sk-key...' :
-																		providerName === 'cerebras' ? 'csk-key...' :
-																			'',
+																providerName === 'moonshot' ? 'sk-key...' :
+																	providerName === 'cerebras' ? 'csk-key...' :
+																		'',
 
 			isPasswordField: true,
 		}
@@ -203,6 +213,10 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 	}
 	else if (settingName === 'headersJSON') {
 		return { title: 'Custom Headers', placeholder: '{ "X-Request-Id": "..." }' }
+	}
+	else if (settingName === 'connections') {
+		// handled by custom UI component, not a standard input field
+		return { title: '(managed below)', placeholder: '' }
 	}
 	else if (settingName === 'region') {
 		// vertex only
@@ -258,6 +272,7 @@ const defaultCustomSettings: Record<CustomSettingName, undefined> = {
 	project: undefined,
 	azureApiVersion: undefined,
 	headersJSON: undefined,
+	connections: undefined,
 }
 
 

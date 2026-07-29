@@ -26,7 +26,7 @@ import { SessionItemContextMenuId } from '../../sessions/browser/views/sessionsL
 import { CLAUDE_CODE_SESSION_TYPE, COPILOT_CLI_SESSION_TYPE, COPILOT_CLOUD_SESSION_TYPE, ISession } from '../../../services/sessions/common/session.js';
 import { IAgentSessionsService } from '../../../../workbench/contrib/chat/browser/agentSessions/agentSessionsService.js';
 import { COPILOT_PROVIDER_ID, CopilotChatSessionsProvider } from './copilotChatSessionsProvider.js';
-import { ActiveSessionHasGitRepositoryContext, ActiveSessionProviderIdContext, ActiveSessionTypeContext, ChatSessionProviderIdContext, IsNewChatSessionContext } from '../../../common/contextkeys.js';
+import { SessionHasGitRepositoryContext, SessionProviderIdContext, SessionTypeContext, IsNewChatSessionContext } from '../../../common/contextkeys.js';
 import { IsolationPicker } from './isolationPicker.js';
 import { BranchPicker } from './branchPicker.js';
 import { ModePicker } from './modePicker.js';
@@ -34,12 +34,12 @@ import { CloudModelPicker } from './modelPicker.js';
 import { CopilotPermissionPickerDelegate, PermissionPicker } from './permissionPicker.js';
 import { ClaudePermissionModePicker } from './claudePermissionModePicker.js';
 
-const IsActiveSessionCopilotCLI = ContextKeyExpr.equals(ActiveSessionTypeContext.key, COPILOT_CLI_SESSION_TYPE);
-const IsActiveSessionCopilotCloud = ContextKeyExpr.equals(ActiveSessionTypeContext.key, COPILOT_CLOUD_SESSION_TYPE);
-const IsActiveCopilotChatSessionProvider = ContextKeyExpr.equals(ActiveSessionProviderIdContext.key, COPILOT_PROVIDER_ID);
+const IsActiveSessionCopilotCLI = ContextKeyExpr.equals(SessionTypeContext.key, COPILOT_CLI_SESSION_TYPE);
+const IsActiveSessionCopilotCloud = ContextKeyExpr.equals(SessionTypeContext.key, COPILOT_CLOUD_SESSION_TYPE);
+const IsActiveCopilotChatSessionProvider = ContextKeyExpr.equals(SessionProviderIdContext.key, COPILOT_PROVIDER_ID);
 const IsActiveSessionCopilotChatCLI = ContextKeyExpr.and(IsActiveSessionCopilotCLI, IsActiveCopilotChatSessionProvider);
 const IsActiveSessionCopilotChatCloud = ContextKeyExpr.and(IsActiveSessionCopilotCloud, IsActiveCopilotChatSessionProvider);
-const IsActiveSessionClaudeCode = ContextKeyExpr.equals(ActiveSessionTypeContext.key, CLAUDE_CODE_SESSION_TYPE);
+const IsActiveSessionClaudeCode = ContextKeyExpr.equals(SessionTypeContext.key, CLAUDE_CODE_SESSION_TYPE);
 const IsActiveSessionCopilotChatClaudeCode = ContextKeyExpr.and(IsActiveSessionClaudeCode, IsActiveCopilotChatSessionProvider);
 
 // -- Actions --
@@ -71,7 +71,7 @@ registerAction2(class extends Action2 {
 			id: 'sessions.defaultCopilot.branchPicker',
 			title: localize2('branchPicker', "Branch"),
 			f1: false,
-			precondition: ActiveSessionHasGitRepositoryContext,
+			precondition: SessionHasGitRepositoryContext,
 			menu: [{
 				id: Menus.NewSessionRepositoryConfig,
 				group: 'navigation',
@@ -384,7 +384,7 @@ class CopilotActiveSessionContribution extends Disposable implements IWorkbenchC
 	) {
 		super();
 
-		const hasRepositoryKey = ActiveSessionHasGitRepositoryContext.bindTo(contextKeyService);
+		const hasRepositoryKey = SessionHasGitRepositoryContext.bindTo(contextKeyService);
 
 		this._register(autorun((reader: IReader) => {
 			const session = sessionsManagementService.activeSession.read(reader);
@@ -459,7 +459,7 @@ class CopilotSessionContextMenuBridge extends Disposable implements IWorkbenchCo
 				});
 			}));
 
-			const providerWhen = ContextKeyExpr.equals(ChatSessionProviderIdContext.key, COPILOT_PROVIDER_ID);
+			const providerWhen = ContextKeyExpr.equals(SessionProviderIdContext.key, COPILOT_PROVIDER_ID);
 			this._register(MenuRegistry.appendMenuItem(SessionItemContextMenuId, {
 				command: { ...item.command, id: wrapperId },
 				group: item.group,
@@ -481,7 +481,7 @@ registerAction2(class DeleteSessionAction extends Action2 {
 				id: SessionItemContextMenuId,
 				group: '1_edit',
 				order: 4,
-				when: ContextKeyExpr.equals(ChatSessionProviderIdContext.key, COPILOT_PROVIDER_ID),
+				when: ContextKeyExpr.equals(SessionProviderIdContext.key, COPILOT_PROVIDER_ID),
 			}]
 		});
 	}

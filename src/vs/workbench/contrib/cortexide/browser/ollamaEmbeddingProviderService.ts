@@ -38,10 +38,7 @@ export class OllamaEmbeddingProviderContribution extends Disposable implements I
 		@ICortexideSettingsService private readonly _settingsService: ICortexideSettingsService,
 	) {
 		super();
-		// Defer embedding probe so Ollama IPC does not block the UI during startup (issue #12).
-		const deferMs = 8_000;
-		const deferHandle = setTimeout(() => { void this._sync(); }, deferMs);
-		this._register({ dispose: () => clearTimeout(deferHandle) });
+		void this._sync();
 		// Re-evaluate when the embedding model setting changes...
 		this._register(this._configurationService.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('cortexide.rag.embeddingModel')) { void this._sync(); }

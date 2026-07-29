@@ -1,8 +1,10 @@
+//!!! DO NOT modify, this file was COPIED from 'microsoft/vscode'
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from '../../../../../../nls.js';
+// This is a facade for the observable implementation. Only import from here!
 
-export const DEFAULT_MODEL_PICKER_CATEGORY = { label: localize('chat.modelPicker.other', "Other Models"), order: Number.MAX_SAFE_INTEGER };
+export * from './observableInternal/index';

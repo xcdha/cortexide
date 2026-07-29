@@ -12,8 +12,7 @@ import { createDecorator } from '../../../../platform/instantiation/common/insta
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IMetricsService } from './metricsService.js';
-import { getModelCapabilities, ModelOverrides } from './modelCapabilities.js';
-import { isProviderSettingsComplete } from './providerSettingsValidation.js';
+import { defaultProviderSettings, getModelCapabilities, ModelOverrides } from './modelCapabilities.js';
 import { VOID_SETTINGS_STORAGE_KEY } from './storageKeys.js';
 import { defaultSettingsOfProvider, FeatureName, ProviderName, ModelSelectionOfFeature, SettingsOfProvider, SettingName, providerNames, localProviderNames, ModelSelection, modelSelectionsEqual, featureNames, CortexideStatefulModelInfo, GlobalSettings, GlobalSettingName, defaultGlobalSettings, ModelSelectionOptions, OptionsOfModelSelection, ChatMode, OverridesOfModel, defaultOverridesOfModel, MCPUserStateOfName as MCPUserStateOfName, MCPUserState } from './cortexideSettingsTypes.js';
 import { pickBestCoderModelName } from './routing/codingModelScore.js';
@@ -76,7 +75,12 @@ export interface ICortexideSettingsService {
 
 	setAutodetectedModels(providerName: ProviderName, modelNames: string[], logging: object, paramSizeOfModelName?: Record<string, string>): void;
 	toggleModelHidden(providerName: ProviderName, modelName: string): void;
-	addModel(providerName: ProviderName, modelName: string): void;
+	// OpenAI-Compatible connection management
+	addOpenAICompatibleConnection(name: string, endpoint: string, apiKey: string, headersJSON: string): string;
+	updateOpenAICompatibleConnection(id: string, name: string, endpoint: string, apiKey: string, headersJSON: string): void;
+	deleteOpenAICompatibleConnection(id: string): void;
+
+	addModel(providerName: ProviderName, modelName: string, connectionId?: string): void;
 	deleteModel(providerName: ProviderName, modelName: string): boolean;
 
 	addMCPUserStateOfNames(userStateOfName: MCPUserStateOfName): Promise<void>;
@@ -199,7 +203,7 @@ const _validatedModelState = (state: Omit<CortexideSettingsState, '_modelOptions
 	for (const providerName of providerNames) {
 		const settingsAtProvider = newSettingsOfProvider[providerName]
 
-		const didFillInProviderSettings = isProviderSettingsComplete(providerName, settingsAtProvider)
+		const didFillInProviderSettings = Object.keys(defaultProviderSettings[providerName]).every(key => !!settingsAtProvider[key as keyof typeof settingsAtProvider])
 
 		if (didFillInProviderSettings === settingsAtProvider._didFillInProviderSettings) continue
 
@@ -446,6 +450,28 @@ class VoidSettingsService extends Disposable implements ICortexideSettingsServic
 		this.state = _stateWithMergedDefaultModels(this.state)
 		this.state = _validatedModelState(this.state);
 
+		// Migrate old OpenAI-Compatible config to connections
+		const oaiConfig = this.state.settingsOfProvider.openAICompatible as any
+		if (oaiConfig.endpoint && (!oaiConfig.connections || oaiConfig.connections.length === 0)) {
+			const migratedConnection: OpenAICompatibleConnection = {
+				id: 'conn-default',
+				name: 'Default',
+				endpoint: oaiConfig.endpoint,
+				apiKey: oaiConfig.apiKey || '',
+				headersJSON: oaiConfig.headersJSON || '{}',
+			}
+			this.state = {
+				...this.state,
+				settingsOfProvider: {
+					...this.state.settingsOfProvider,
+					openAICompatible: {
+						...oaiConfig,
+						connections: [migratedConnection],
+					},
+				},
+			}
+		}
+
 		// Override localFirstAI from VS Code configuration (source of truth)
 		// This ensures VS Code Settings UI controls the behavior
 		const configLocalFirstAI = this._configurationService.getValue<boolean>('cortexide.global.localFirstAI')
@@ -664,17 +690,49 @@ class VoidSettingsService extends Disposable implements ICortexideSettingsServic
 		this._metricsService.capture('Toggle Model Hidden', { providerName, modelName, newIsHidden })
 
 	}
-	addModel(providerName: ProviderName, modelName: string) {
+	// OpenAI-Compatible connection management
+	addOpenAICompatibleConnection(name: string, endpoint: string, apiKey: string, headersJSON: string): string {
+		const id = `conn-${Date.now()}`
+		const connection: OpenAICompatibleConnection = { id, name, endpoint, apiKey, headersJSON }
+		const config = this.state.settingsOfProvider.openAICompatible as any
+		const connections: OpenAICompatibleConnection[] = config.connections || []
+		this.setSettingOfProvider('openAICompatible', 'connections', [...connections, connection] as any)
+		this._metricsService.capture('Add OpenAI-Compatible Connection', { name, endpoint })
+		return id
+	}
+	updateOpenAICompatibleConnection(id: string, name: string, endpoint: string, apiKey: string, headersJSON: string): void {
+		const config = this.state.settingsOfProvider.openAICompatible as any
+		const connections: OpenAICompatibleConnection[] = config.connections || []
+		const idx = connections.findIndex(c => c.id === id)
+		if (idx === -1) return
+		const newConnections = [
+			...connections.slice(0, idx),
+			{ ...connections[idx], name, endpoint, apiKey, headersJSON },
+			...connections.slice(idx + 1),
+		]
+		this.setSettingOfProvider('openAICompatible', 'connections', newConnections as any)
+	}
+	deleteOpenAICompatibleConnection(id: string): void {
+		const config = this.state.settingsOfProvider.openAICompatible as any
+		const connections: OpenAICompatibleConnection[] = config.connections || []
+		const newConnections = connections.filter(c => c.id !== id)
+		this.setSettingOfProvider('openAICompatible', 'connections', newConnections as any)
+		// also delete models associated with this connection
+		const models = config.models.filter((m: CortexideStatefulModelInfo) => m.connectionId !== id)
+		this.setSettingOfProvider('openAICompatible', 'models', models)
+		this._metricsService.capture('Delete OpenAI-Compatible Connection', { id })
+	}
+	addModel(providerName: ProviderName, modelName: string, connectionId?: string) {
 		const { models } = this.state.settingsOfProvider[providerName]
 		const existingIdx = models.findIndex(m => m.modelName === modelName)
 		if (existingIdx !== -1) return // if exists, do nothing
 		const newModels = [
 			...models,
-			{ modelName, type: 'custom', isHidden: false } as const
+			{ modelName, type: 'custom' as const, isHidden: false, ...(connectionId ? { connectionId } : {}) }
 		]
 		this.setSettingOfProvider(providerName, 'models', newModels)
 
-		this._metricsService.capture('Add Model', { providerName, modelName })
+		this._metricsService.capture('Add Model', { providerName, modelName, connectionId })
 
 	}
 	deleteModel(providerName: ProviderName, modelName: string): boolean {

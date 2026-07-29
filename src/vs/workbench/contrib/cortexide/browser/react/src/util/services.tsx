@@ -159,13 +159,17 @@ export const _registerServices = (accessor: ServicesAccessor) => {
 	)
 
 	colorThemeState = themeService.getColorTheme().type
+	// Debug: write to file
+	try { const fs = require('fs'); fs.appendFileSync('D:/Project/Synapse IDE/cortexide-work2/.dev-userdata/theme-debug.log', `[${new Date().toISOString()}] initial colorThemeState=${colorThemeState} listeners=${colorThemeStateListeners.size}\n`); } catch(e) {}
 	// Notify any already-mounted components so they get correct initial theme
 	colorThemeStateListeners.forEach(l => l(colorThemeState))
 	disposables.push(
 		themeService.onDidColorThemeChange(({ type }) => {
+			try { const fs = require('fs'); fs.appendFileSync('D:/Project/Synapse IDE/cortexide-work2/.dev-userdata/theme-debug.log', `[${new Date().toISOString()}] onDidColorThemeChange type=${type}\n`); } catch(e) {}
 			colorThemeState = type
 			// Defer to next frame so we don't call React setState during theme application (avoids "update while rendering" when switching theme)
 			requestAnimationFrame(() => {
+				try { const fs = require('fs'); fs.appendFileSync('D:/Project/Synapse IDE/cortexide-work2/.dev-userdata/theme-debug.log', `[${new Date().toISOString()}] notifying listeners, count=${colorThemeStateListeners.size}\n`); } catch(e) {}
 				colorThemeStateListeners.forEach(l => l(colorThemeState))
 			})
 		})
@@ -408,7 +412,33 @@ export const useIsDark = () => {
 	useEffect(() => {
 		ss(colorThemeState)
 		colorThemeStateListeners.add(ss)
-		return () => { colorThemeStateListeners.delete(ss) }
+
+		// Fallback: also watch DOM body class changes for theme switching
+		// VS Code sets 'vs-dark' or 'vs-light' class on body
+		const checkDarkFromDOM = () => {
+			const body = document.body
+			if (!body) return
+			const isDarkFromDOM = body.classList.contains('vs-dark') || body.classList.contains('hc-black')
+			const newScheme = isDarkFromDOM ? ColorScheme.DARK : ColorScheme.LIGHT
+			if (newScheme !== colorThemeState) {
+				colorThemeState = newScheme
+				colorThemeStateListeners.forEach(l => l(colorThemeState))
+			}
+		}
+
+		// Check immediately
+		checkDarkFromDOM()
+
+		// Watch for class changes on body
+		const observer = new MutationObserver(() => {
+			checkDarkFromDOM()
+		})
+		observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+
+		return () => {
+			colorThemeStateListeners.delete(ss)
+			observer.disconnect()
+		}
 	}, [ss])
 
 	// s is the theme, return isDark instead of s

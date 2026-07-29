@@ -20,7 +20,7 @@ import { ILogService } from '../../../../platform/log/common/log.js';
 export interface AuditEvent {
 	ts: number;
 	user?: string;
-	action: 'prompt' | 'reply' | 'diff_preview' | 'apply' | 'undo' | 'rollback' | 'snapshot:create' | 'snapshot:restore' | 'snapshot:discard' | 'git:stash' | 'git:stash:restore' | 'egress';
+	action: 'prompt' | 'reply' | 'diff_preview' | 'apply' | 'undo' | 'rollback' | 'snapshot:create' | 'snapshot:restore' | 'snapshot:discard' | 'git:stash' | 'git:stash:restore';
 	files?: string[];
 	diffStats?: { linesAdded: number; linesRemoved: number; hunks: number };
 	model?: string;
@@ -44,7 +44,7 @@ export interface IAuditLogService {
 	readEvents(): Promise<{ events: AuditEvent[]; skipped: number }>;
 }
 
-export class AuditLogService extends Disposable implements IAuditLogService {
+class AuditLogService extends Disposable implements IAuditLogService {
 	declare readonly _serviceBrand: undefined;
 
 	private _enabled = false;
@@ -170,10 +170,8 @@ export class AuditLogService extends Disposable implements IAuditLogService {
 		}
 
 		try {
-			// Read existing content and append. The whole file is rewritten, so the write MUST be
-			// atomic (temp file + rename, the pattern applyEngineV2/saveModel use): otherwise a crash
-			// mid-write corrupts or truncates the ENTIRE audit log, not just the new tail -- defeating
-			// the point of a tamper-evident, append-only audit trail.
+			// Append to file (non-blocking)
+			// Read existing content and append
 			let existingContent = VSBuffer.fromString('');
 			try {
 				const existing = await this._fileService.readFile(this._logPath);
@@ -182,7 +180,7 @@ export class AuditLogService extends Disposable implements IAuditLogService {
 				// File doesn't exist yet, that's fine
 			}
 			const combined = VSBuffer.concat([existingContent, buffer]);
-			await this._fileService.writeFile(this._logPath, combined, { atomic: { postfix: '.cortexide-tmp' } });
+			await this._fileService.writeFile(this._logPath, combined);
 			this._currentFileSize += sizeBytes;
 		} catch (err) {
 			this._logService.error('[AuditLog] Failed to write audit log:', err);
@@ -219,11 +217,11 @@ export class AuditLogService extends Disposable implements IAuditLogService {
 				rotationNum++;
 			} while (await this._fileService.exists(rotatedPath));
 
-			// Write compressed file (atomic: a crash must not leave a half-written rotation archive).
-			await this._fileService.writeFile(rotatedPath, VSBuffer.wrap(compressed), { atomic: { postfix: '.cortexide-tmp' } });
+			// Write compressed file
+			await this._fileService.writeFile(rotatedPath, VSBuffer.wrap(compressed));
 
-			// Create new empty log file (atomic: the truncation to empty must not race a concurrent read).
-			await this._fileService.writeFile(this._logPath, VSBuffer.fromString(''), { atomic: { postfix: '.cortexide-tmp' } });
+			// Create new empty log file
+			await this._fileService.writeFile(this._logPath, VSBuffer.fromString(''));
 			this._currentFileSize = 0;
 
 			this._logService.debug(`[AuditLog] Rotated log file to ${rotatedPath.path}`);

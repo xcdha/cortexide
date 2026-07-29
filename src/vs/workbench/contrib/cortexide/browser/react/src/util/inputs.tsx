@@ -17,7 +17,7 @@ import { asCssVariable } from '../../../../../../../platform/theme/common/colorU
 import { inputBackground, inputForeground } from '../../../../../../../platform/theme/common/colorRegistry.js';
 import { useFloating, autoUpdate, offset, flip, shift, size, autoPlacement } from '@floating-ui/react';
 import { URI } from '../../../../../../../base/common/uri.js';
-import { getBasename, getFolderName } from '../sidebar-tsx/shared/pathUtils.js';
+import { getBasename, getFolderName } from '../sidebar-tsx/SidebarChat.js';
 import { ChevronRight, File, Folder, FolderClosed, LucideProps } from 'lucide-react';
 import { StagingSelectionItem } from '../../../../common/chatThreadServiceTypes.js';
 import { DiffEditorWidget } from '../../../../../../../editor/browser/widget/diffEditor/diffEditorWidget.js';
@@ -807,13 +807,13 @@ export const VoidInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(fun
 
 	const isChatDark = appearance === 'chatDark'
 	const appearanceClasses = isChatDark
-		? 'text-white placeholder:text-white/40'
+		? 'text-void-fg-1 placeholder:text-void-fg-3'
 		: 'text-void-fg-1 placeholder:text-void-fg-3'
 
 	const baseStyle: React.CSSProperties = isChatDark
 		? {
 			background: 'transparent',
-			color: '#fff',
+			color: asCssVariable(inputForeground),
 			border: 'none',
 			boxShadow: 'none',
 		}
@@ -1827,6 +1827,14 @@ export const BlockCode = ({ initValue, language, maxHeight, showScrollbars }: Bl
 		/>
 	</div>
 
+}
+
+
+export const VoidButtonBgDarken = ({ children, disabled, onClick, className }: { children: React.ReactNode; disabled?: boolean; onClick: () => void; className?: string }) => {
+	return <button disabled={disabled}
+		className={`px-3 py-1 bg-black/10 dark:bg-white/10 rounded-sm overflow-hidden whitespace-nowrap flex items-center justify-center ${className || ''}`}
+		onClick={onClick}
+	>{children}</button>
 }
 
 // export const VoidScrollableElt = ({ options, children }: { options: ScrollableElementCreationOptions, children: React.ReactNode }) => {

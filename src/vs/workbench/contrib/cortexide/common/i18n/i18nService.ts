@@ -235,6 +235,7 @@ export const EN_TRANSLATIONS = {
 	'settings.mcpShort': 'MCP',
 	'settings.general': 'General',
 	'settings.language': 'Display language',
+	'settings.languageDesc': 'Choose the display language for CortexIDE interface.',
 	'settings.save': 'Save',
 	'settings.saved': 'Saved',
 	'settings.apiKey': 'API Key',
@@ -242,6 +243,44 @@ export const EN_TRANSLATIONS = {
 	'settings.addModel': 'Add model',
 	'settings.removeModel': 'Remove',
 	'settings.enableProvider': 'Enable provider',
+	'settings.localProvidersDesc': 'CortexIDE can access any model that you host locally. We automatically detect your local models by default.',
+	'settings.mainProvidersDesc': 'CortexIDE can access models from Anthropic, OpenAI, OpenRouter, and more.',
+	'settings.autocompleteDesc': 'Experimental.',
+	'settings.autocompleteHint': 'Only works with FIM models.*',
+	'settings.applyDesc': 'Settings that control the behavior of the Apply button.',
+	'settings.tools': 'Tools',
+	'settings.toolsDesc': 'Tools are functions that LLMs can call. Some tools require user approval.',
+	'settings.enabled': 'Enabled',
+	'settings.disabled': 'Disabled',
+	'settings.sameAsChat': 'Same as Chat model',
+	'settings.differentModel': 'Different model',
+	'settings.fixLintErrors': 'Fix lint errors',
+	'settings.autoAcceptLLMChanges': 'Auto-accept LLM changes',
+	'settings.routingPolicy': 'Routing policy',
+	'settings.noServersFound': 'No servers found',
+	'settings.showInDropdown': 'Show in Dropdown',
+	'settings.hideFromDropdown': 'Hide from Dropdown',
+	'settings.customModel': 'Custom model',
+	'settings.advancedSettings': 'Advanced Settings',
+	'settings.delete': 'Delete',
+	'settings.added': 'Added',
+	'settings.providerName': 'Provider Name',
+	'settings.modelName': 'Model Name',
+	'settings.fastApply': 'Fast Apply',
+	'settings.slowApply': 'Slow Apply',
+	'settings.fastApplyDesc': 'Output Search/Replace blocks',
+	'settings.slowApplyDesc': 'Rewrite whole files',
+	'settings.codeModels': 'Code Models',
+	'settings.visionModels': 'Vision Models (Image Analysis)',
+	'settings.generalPurpose': 'General Purpose',
+	'settings.showSuggestionsOnSelect': 'Show suggestions on select',
+	'settings.enableYOLOMode': 'YOLO Mode',
+	'settings.installOllama': 'Install Ollama',
+	'settings.installing': 'Installing…',
+	'settings.healthy': 'Healthy',
+	'settings.waiting': 'Waiting',
+	'settings.installMethod': 'Install method',
+	'common.add': 'Add',
 
 	// allow-any-unicode-next-line
 	// ── Rules ─────────────────────────────────────────────────────────────────
@@ -294,6 +333,328 @@ export const EN_TRANSLATIONS = {
 	'routing.statusBar.tooltipNoProviders': 'No free-tier providers are configured. Add a free-tier API key (Groq, Gemini, OpenRouter, Mistral) to see live quota tracking.',
 	'routing.statusBar.allExhausted': 'Free quota exhausted',
 	'routing.statusBar.allExhaustedHint': 'All free-tier quotas exhausted — switch to a local model or add an API key.',
+
+	// ── Settings page additional translations ────────────────────────────────
+	'settings.confirmReset': 'Confirm Reset',
+	'settings.invalidJson': 'Invalid JSON',
+	'settings.overrideDefaults': 'Override model defaults',
+	'settings.jsonAdvancedDesc': 'See the [sourcecode]({0}) for a reference on how to set this JSON (advanced).',
+	'settings.changeDefaultsFor': 'Change Defaults for {0} ({1})',
+	'settings.cancel': 'Cancel',
+	'settings.confirm': 'Confirm',
+	'settings.seeOnboarding': 'See onboarding screen?',
+
+	// ── Refresh buttons ──────────────────────────────────────────────────────
+	'settings.modelsUpToDate': '{0} Models are up-to-date!',
+	'settings.providerNotFound': '{0} not found!',
+	'settings.manualRefresh': 'Manually refresh {0} models.',
+	'settings.foundOnline': '{0}: found {1} model{2} online',
+	'settings.noOnlineCatalog': '{0}: no online catalog — using the built-in list',
+	'settings.refreshCatalogFailed': 'Failed to refresh {0} catalog',
+	'settings.refreshModelCatalog': 'Refresh {0} model catalog',
+
+	// ── Ollama setup ─────────────────────────────────────────────────────────
+	'settings.ollamaSetup': 'Ollama Setup',
+	'settings.installOllamaBtn': 'Install Ollama',
+	'settings.installingOllama': 'Installing…',
+	'settings.retry': 'Retry',
+	'settings.pullModel': 'Pull model:',
+	'settings.pull': 'Pull',
+	'settings.deleteModel': 'Delete',
+	'settings.copyLog': 'Copy log',
+	'settings.clear': 'Clear',
+	'settings.installMethod.auto': 'Auto',
+	'settings.installMethod.brew': 'Homebrew (macOS)',
+	'settings.installMethod.curl': 'Curl Script (macOS/Linux)',
+	'settings.installMethod.winget': 'Winget (Windows)',
+	'settings.installMethod.choco': 'Chocolatey (Windows)',
+	'settings.autoTuneAfterPull': 'Auto-tune after pull',
+	'settings.enableRepoIndexer': 'Enable repo indexer',
+	'settings.autoCompact': 'Auto-compact long agent runs',
+	'settings.lifecycleHooks': 'Lifecycle hooks',
+	'settings.useHeadlessBrowsing': 'Use headless browsing',
+
+	// ── Routing policy ──────────────────────────────────────────────────────
+	'settings.routingPolicyDesc': 'Controls how CortexIDE picks between configured model providers. Free-tier ladder tracks per-provider quotas and auto-fails-over on 429.',
+	'settings.routingPolicy.autoCheapest': 'Auto (cheapest viable)',
+	'settings.routingPolicy.freeTier': 'Free-tier ladder',
+	'settings.routingPolicy.localOnly': 'Local only',
+
+	// ── YOLO Mode ───────────────────────────────────────────────────────────
+	'settings.yoloMode': 'YOLO Mode',
+	'settings.yoloModeDesc': 'Automatically apply low-risk edits without approval. High-risk edits always require approval.',
+	'settings.yoloRiskThreshold': 'Risk Threshold',
+	'settings.yoloRiskDesc': 'Edits with risk below this threshold will auto-apply (0.0 = safe, 1.0 = dangerous)',
+	'settings.yoloConfidenceThreshold': 'Confidence Threshold',
+	'settings.yoloConfidenceDesc': 'Edits with confidence above this threshold will auto-apply (0.0 = uncertain, 1.0 = confident)',
+
+	// ── Editor ──────────────────────────────────────────────────────────────
+	'settings.editor': 'Editor',
+	'settings.editorDesc': 'Settings that control the visibility of CortexIDE suggestions in the code editor.',
+
+	// ── One-Click Switch ────────────────────────────────────────────────────
+	'settings.oneClickSwitch': 'One-Click Switch',
+	'settings.oneClickSwitchDesc': 'Transfer your editor settings into CortexIDE.',
+
+	// ── Import/Export ───────────────────────────────────────────────────────
+	'settings.importExport': 'Import/Export',
+	'settings.importExportDesc': 'Transfer CortexIDE\'s settings and chats in and out of CortexIDE.',
+	'settings.importSettings': 'Import Settings',
+	'settings.exportSettings': 'Export Settings',
+	'settings.resetSettings': 'Reset Settings',
+	'settings.importChats': 'Import Chats',
+	'settings.exportChats': 'Export Chats',
+	'settings.resetChats': 'Reset Chats',
+
+	// ── Built-in Settings ───────────────────────────────────────────────────
+	'settings.builtinSettings': 'Built-in Settings',
+	'settings.builtinSettingsDesc': 'IDE settings, keyboard settings, and theme customization.',
+	'settings.generalSettings': 'General Settings',
+	'settings.keyboardSettings': 'Keyboard Settings',
+	'settings.themeSettings': 'Theme Settings',
+	'settings.openLogs': 'Open Logs',
+
+	// ── Metrics ─────────────────────────────────────────────────────────────
+	'settings.metrics': 'Metrics',
+	'settings.metricsDesc': 'Very basic anonymous usage tracking helps us keep CortexIDE running smoothly. You may opt out below. Regardless of this setting, CortexIDE never sees your code, messages, or API keys.',
+
+	// ── Auto-approve tools ──────────────────────────────────────────────────
+	'settings.autoApprove': 'Auto-approve {0}',
+
+	// ── Misc ────────────────────────────────────────────────────────────────
+	'settings.noToolsAvailable': 'No tools available',
+	'settings.command': 'Command:',
+	'settings.detectedLocally': 'Detected locally',
+	'settings.installOllamaModel': 'Please install an Ollama model. We\'ll auto-detect it.',
+	'settings.addModelFor': 'Please add a model for {0} (Models section).',
+
+	// ── Onboarding additional ───────────────────────────────────────────────
+	'onboarding.highlights.chatQuickEdit': 'Chat + Quick Edit',
+	'onboarding.highlights.fastApply': 'Fast Apply diffs',
+	'onboarding.highlights.pdfImage': 'PDF & image uploads',
+	'onboarding.highlights.localCloud': 'Local & cloud models',
+	'onboarding.stats.uploads.label': 'Uploads',
+	'onboarding.stats.uploads.value': 'PDFs + Images',
+	'onboarding.stats.uploads.detail': 'Drop specs, screenshots, and research straight into chat',
+	'onboarding.stats.fastApply.label': 'Fast Apply',
+	'onboarding.stats.fastApply.value': 'Line-by-line',
+	'onboarding.stats.fastApply.detail': 'Approve every change from the diff that generated it',
+	'onboarding.stats.modelRouter.label': 'Model router',
+	'onboarding.stats.modelRouter.value': 'Auto-switch',
+	'onboarding.stats.modelRouter.detail': 'Chooses Anthropic, GPT-4o, Gemini, DeepSeek, or Ollama per task',
+	'onboarding.stats.agentTools.label': 'Agent tools',
+	'onboarding.stats.agentTools.value': '{0} built-ins',
+	'onboarding.stats.agentTools.detail': 'File edits, terminal, web search, LSP navigation, code review, and more',
+	'onboarding.tab.free': 'Free',
+	'onboarding.tab.paid': 'Paid',
+	'onboarding.tab.local': 'Local',
+	'onboarding.tab.cloudOther': 'Cloud/Other',
+	'onboarding.tab.free.desc': 'Providers with a 100% free tier. Add as many as you\'d like!',
+	'onboarding.tab.paid.desc': 'Connect directly with any provider (bring your own key).',
+	'onboarding.tab.local.desc': 'Active providers should appear automatically. Add as many as you\'d like!',
+	'onboarding.tab.cloudOther.desc': 'Add as many as you\'d like! Reach out for custom configuration requests.',
+	'onboarding.feature.chat': 'Chat',
+	'onboarding.feature.quickEdit': 'Quick Edit',
+	'onboarding.feature.autocomplete': 'Autocomplete',
+	'onboarding.feature.fastApply': 'Fast Apply',
+	'onboarding.feature.sourceControl': 'Source Control',
+	'onboarding.step02': 'Step 02',
+	'onboarding.chooseProviders': 'Choose your model providers',
+	'onboarding.chooseProvidersDesc': 'Load multiple providers at once. CortexIDE can route Chat, Quick Edit, and Autocomplete to the strongest model on every request.',
+	'onboarding.featureCoverage': 'Feature coverage',
+	'onboarding.connected': 'Connected',
+	'onboarding.pending': 'Pending',
+	'onboarding.setupLocalAuto': 'Set up local AI automatically',
+	'onboarding.setupLocalAutoDesc': 'Install Ollama + download the best model for your hardware - guided setup in 2 minutes',
+	'onboarding.addProvider': 'Add {0}',
+	'onboarding.details': 'Details',
+	'onboarding.localLabel': 'Local',
+	'onboarding.modelsLabel': 'Models',
+	'onboarding.localModelsDesc': 'Local models auto-detect when possible. Add custom entries to fine tune routing.',
+	'onboarding.connectOneModel': 'Please connect at least one Chat-capable model before moving on.',
+	'onboarding.tooltip.gemini': 'Gemini 2.5 Pro offers 25 free chats daily, Flash offers ~500. Upgrade later if you exhaust credits.',
+	'onboarding.tooltip.openRouter': 'OpenRouter grants 50 free chats a day (1000 with a $10 deposit) on models tagged :free.',
+	'onboarding.tooltip.pollinations': 'Cheap API with many models (Pollen credits). Get your key at enter.pollinations.ai.',
+	'onboarding.fillRequired': 'Please enter all required fields or choose another provider',
+	'onboarding.welcomeDesc': 'CortexIDE keeps Chat, Quick Edit, Fast Apply, and source control in the same dark workspace-and it adds native PDF + image uploads so product specs and design mocks travel with every conversation.',
+	'onboarding.yes': 'Yes',
+	'onboarding.no': 'No',
+	'onboarding.yesStar': 'Yes*',
+	'onboarding.wantToUse.smart.basic': 'Models with the best performance on benchmarks.',
+	'onboarding.wantToUse.private.basic': 'Host on your computer or local network for full data privacy.',
+	'onboarding.wantToUse.cheap.basic': 'Free and affordable options.',
+	'onboarding.wantToUse.smart.detailed': 'Most intelligent and best for agent mode.',
+	'onboarding.wantToUse.private.detailed': 'Private-hosted so your data never leaves your computer or network.',
+	'onboarding.wantToUse.cheap.detailed': 'Use great deals like Gemini 2.5 Pro, or self-host a model with Ollama or vLLM for free.',
+
+	// ── Local Setup Wizard ──────────────────────────────────────────────────
+	'localWizard.error.notRunning': 'Ollama installation completed but service is not running. Please start Ollama manually.',
+	'localWizard.error.installFailed': 'Failed to install Ollama. Please install it manually from https://ollama.com',
+	'localWizard.error.downloadFailed': 'Failed to download models. Please check your internet connection and try again.',
+	'localWizard.error.verifyFailed': 'Failed to verify model capabilities. Please check that your models are properly installed.',
+	'localWizard.error.skipped': 'Verification skipped',
+	'localWizard.error.defaultsFailed': 'Failed to set default models. You can configure them manually in settings.',
+	'localWizard.setupError': 'Setup Error',
+	'localWizard.failedWhileDownloading': 'Failed while downloading: {0}',
+	'localWizard.required': 'Required: {0}',
+	'localWizard.available': 'Available: {0}',
+	'localWizard.startOver': 'Start Over',
+	'localWizard.skipSetup': 'Skip Setup',
+	'localWizard.stepProgress': 'Step {0} of {1}',
+	'localWizard.chooseSetup': 'Choose your setup',
+	'localWizard.chooseSetupDesc': 'Get started with CortexIDE. Choose local models for privacy, or use cloud providers.',
+	'localWizard.useLocalModels': 'Use local models (no API keys)',
+	'localWizard.useLocalModelsDesc': 'Run models on your computer for complete privacy. We\'ll help you set up Ollama.',
+	'localWizard.useCloudProvider': 'Use cloud provider',
+	'localWizard.useCloudProviderDesc': 'Connect to Anthropic, OpenAI, or other cloud providers with API keys.',
+	'localWizard.decideLater': 'Decide later',
+	'localWizard.systemCheck': 'System Check',
+	'localWizard.ollamaInstalled': 'Ollama installed',
+	'localWizard.ollamaRunning': 'Ollama running',
+	'localWizard.diskSpace': 'Disk space: {0} GB available',
+	'localWizard.chooseModelPack': 'Choose a model pack',
+	'localWizard.detectedVram': 'Detected {0} GB GPU memory - best model pre-selected for your hardware.',
+	'localWizard.selectModelPackDesc': 'Select a pre-configured set of models optimized for different use cases.',
+	'localWizard.bestForHardware': 'Best for your hardware',
+	'localWizard.recommended': 'Recommended',
+	'localWizard.gb': '{0} GB',
+	'localWizard.ram': '{0}+ GB RAM',
+	'localWizard.downloadingModel': 'Downloading {0}...',
+	'localWizard.modelsProgress': '{0} of {1} models',
+	'localWizard.downloading': 'Downloading...',
+	'localWizard.downloadModels': 'Download Models',
+	'localWizard.verifyingCapabilities': 'Verifying Capabilities',
+	'localWizard.verifyingDesc': 'Testing that your local models work correctly.',
+	'localWizard.testing': 'Testing {0}...',
+	'localWizard.runVerification': 'Run Verification',
+	'localWizard.verificationResults': 'Verification Results',
+	'localWizard.someTestsFailed': 'Some verification tests failed. You can still proceed, but some features may not work correctly.',
+	'localWizard.continue': 'Continue',
+	'localWizard.continueAnyway': 'Continue Anyway',
+	'localWizard.skipped': '(skipped)',
+	'localWizard.chat': 'Chat',
+	'localWizard.toolCalling': 'Tool Calling',
+	'localWizard.webCalling': 'Web Calling',
+	'localWizard.setupComplete': 'Setup Complete!',
+	'localWizard.setupCompleteDesc': 'Your local models are configured and ready to use. CortexIDE will use local models by default.',
+	'localWizard.startUsingCortexIDE': 'Start using CortexIDE',
+	'settings.addConnection': 'Add connection',
+	'settings.connectionName': 'Connection name',
+	'settings.connection': 'Connection',
+	'settings.addAModel': 'Add a model',
+	'settings.ollamaSetupRev': 'Ollama Setup (rev 2025-10-30-1)',
+	'settings.autoCompactTooltip': 'When an agent run nears the model context window, send a compacted view (keep the task + recent messages) so it continues instead of overflowing. Non-destructive: the stored conversation is unchanged.',
+	'settings.lifecycleHooksTooltip': 'Run your own commands from .cortexide/hooks.json at agent events (pre-tool, post-tool, agent-stop). Commands run quietly with no shell, fire-and-forget.',
+	'settings.useHeadlessBrowsingTooltip': 'Use headless BrowserWindow for better content extraction from complex pages. Disable to use direct HTTP fetch instead.',
+	'settings.vision': '(Vision)',
+	'settings.visionBetterQuality': '(Vision, Better Quality)',
+	'settings.visionFaster': '(Vision, Faster)',
+	'settings.manuallyInstall1': '1. If the install does not start, download Ollama manually from [ollama.com/download](https://ollama.com/download).',
+	'settings.manuallyInstall2': '2. Optionally, run `ollama pull llama3.1` to install a starter model.',
+	'settings.autoDetectModels': 'CortexIDE automatically detects locally running models and enables them.',
+	'settings.transferFrom': 'Transfer from {0}',
+	'settings.transferring': 'Transferring',
+	'settings.settingsTransferred': 'Settings Transferred',
+	'settings.optOutRestart': 'Opt-out (requires restart)',
+	'settings.aiInstructions': 'AI Instructions',
+	'settings.aiInstructionsDesc': 'System instructions to include with all AI requests.',
+	'settings.aiInstructionsDesc2': 'For project-scoped rules, use `.cortexide/rules/*.md` files - see Project Rules below.',
+	'settings.disableSystemMessage': 'Disable system message',
+	'settings.disableSystemMessageDesc': 'When disabled, CortexIDE will not include anything in the system message except for content you specified above.',
+	'settings.scmDesc': 'Settings that control the behavior of the commit message generator.',
+	'settings.addMcpServer': 'Add MCP Server',
+	'settings.mcpDesc': 'Use Model Context Protocol to provide Agent mode with more tools.',
+	'settings.playwrightAdded': 'Added the Playwright MCP server (browser automation) to mcp.json. It connects via npx on first use.',
+	'settings.playwrightExists': 'A "playwright" MCP server is already in your mcp.json.',
+	'settings.playwrightAddFailed': 'Could not add Playwright MCP: {0}',
+	'settings.playwrightButton': '+ Playwright (browser automation)',
+	'settings.importedSuccess': '{0} imported successfully!',
+	'settings.importFailed': 'Failed to import {0}',
+	'settings.confirmDeleteModel': 'Delete model "{0}" from Ollama?',
+	'settings.selectModelPull': 'Please select a model to pull.',
+	'settings.selectModelDelete': 'Please select a model to delete.',
+	'settings.modelPulledSuccess': 'Model "{0}" pulled successfully.',
+	'settings.modelDeletedSuccess': 'Model "{0}" deleted successfully.',
+	'settings.pullStarted': 'Started pulling "{0}". This may take a while for large models. Check terminal for progress.',
+	'settings.warmingIndex': 'Warming project index...',
+	'settings.indexWarmed': 'Project index warmed.',
+	'settings.modelPullFailed': 'Failed to pull model "{0}". See terminal for details.',
+	'settings.modelDeleteFailed': 'Failed to delete model "{0}". See terminal for details.',
+	'settings.deleteTimeout': 'Delete command for "{0}" timed out. Check terminal to see if it completed.',
+	'settings.pullFailedShort': 'Failed to pull {0}. Check terminal for details.',
+	'settings.pullSuccess': 'Successfully pulled {0}',
+	'settings.pullFailedExit': 'Failed to pull {0} (exit code {1}). Check terminal for details.',
+	'settings.pullInProgress': 'Pulling {0}...',
+	'settings.pullInProgressLong': 'Pulling {0}... (may take time for large models)',
+	'settings.pullError': 'Error pulling {0}: {1}',
+	'settings.pullStartFailed': 'Failed to start pull: {0}',
+	'settings.deleteStarted': 'Deleting {0}...',
+	'settings.deleteSuccess': 'Successfully deleted {0}',
+	'settings.deleteFailedExit': 'Failed to delete {0} (exit code {1}). Check terminal for details.',
+	'settings.deleteTimeoutShort': 'Delete command timed out for {0}. The command may still be running.',
+	'settings.deleteError': 'Error deleting {0}: {1}',
+	'settings.deleteStartFailed': 'Failed to start delete: {0}',
+	'settings.installStarted': 'Ollama install started in the integrated terminal. Models will appear when ready.',
+	'settings.installStartFailedNotif': 'Failed to start Ollama install. Please try again or install manually.',
+	'settings.installerRunning': 'Running installer in terminal...',
+	'settings.installStartFailed': 'Failed to start install. See terminal or try manual install.',
+	'settings.ollamaRunning': 'Ollama is running. Models will appear shortly.',
+	'settings.noWorkspace': 'No workspace folder open.',
+	'settings.newRule': '# New Rule',
+	'settings.ruleDesc': 'Describe the rule here.',
+	'settings.clickToOpen': 'Click to open rule file',
+	'settings.aiInstructionsPlaceholder': 'Do not change my indentation or delete my comments. When writing TS or JS, do not add ;\'s. Write new code using Rust if possible. ',
+	'settings.autoDetectLocal': 'Automatically detect local providers and models ({0}).',
+	'settings.addTooltip': 'Add {0} to enable',
+	'settings.recommendOllama': 'We recommend using the largest qwen2.5-coder model you can with Ollama (try qwen2.5-coder:3b).',
+	'settings.modelNotFound': 'Model not recognized by CortexIDE.',
+	'settings.modelPackaged': '{0} comes packaged with CortexIDE, so you shouldn\'t need to change these settings.',
+	'settings.modelRecognized': 'CortexIDE recognizes {0} ("{1}").',
+	'settings.thisModelExists': 'This model already exists.',
+	'settings.selectProvider': 'Please select a provider.',
+	'settings.enterModelName': 'Please enter a model name.',
+
+	// ── Feature names (displayInfoOfFeatureName) ────────────────────────────
+	'settings.feature.Autocomplete': 'Autocomplete',
+	'settings.feature.Ctrl+K': 'Quick Edit',
+	'settings.feature.Chat': 'Chat',
+	'settings.feature.Apply': 'Apply',
+	'settings.feature.SCM': 'Commit Message Generator',
+
+	// ── Provider descriptions (subTextMdOfProviderName, Markdown) ───────────
+	'settings.providerDesc.anthropic': 'Get your [API Key here](https://console.anthropic.com/settings/keys).',
+	'settings.providerDesc.openAI': 'Get your [API Key here](https://platform.openai.com/api-keys).',
+	'settings.providerDesc.deepseek': 'Get your [API Key here](https://platform.deepseek.com/api_keys).',
+	'settings.providerDesc.openRouter': 'Get your [API Key here](https://openrouter.ai/settings/keys). Read about [rate limits here](https://openrouter.ai/docs/api-reference/limits).',
+	'settings.providerDesc.gemini': 'Get your [API Key here](https://aistudio.google.com/apikey). Read about [rate limits here](https://ai.google.dev/gemini-api/docs/rate-limits#current-rate-limits).',
+	'settings.providerDesc.groq': 'Get your [API Key here](https://console.groq.com/keys).',
+	'settings.providerDesc.xAI': 'Get your [API Key here](https://console.x.ai).',
+	'settings.providerDesc.mistral': 'Get your [API Key here](https://console.mistral.ai/api-keys).',
+	'settings.providerDesc.openAICompatible': 'Use any provider that\'s OpenAI-compatible (use this for llama.cpp and more).',
+	'settings.providerDesc.googleVertex': 'You must authenticate before using Vertex with Void. Read more about endpoints [here](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/call-vertex-using-openai-library), and regions [here](https://cloud.google.com/vertex-ai/docs/general/locations#available-regions).',
+	'settings.providerDesc.microsoftAzure': 'Read more about endpoints [here](https://learn.microsoft.com/en-us/rest/api/aifoundry/model-inference/get-chat-completions/get-chat-completions?view=rest-aifoundry-model-inference-2024-05-01-preview&tabs=HTTP), and get your API key [here](https://learn.microsoft.com/en-us/azure/search/search-security-api-keys?tabs=rest-use%2Cportal-find%2Cportal-query#find-existing-keys).',
+	'settings.providerDesc.awsBedrock': 'Connect via a LiteLLM proxy or the AWS [Bedrock-Access-Gateway](https://github.com/aws-samples/bedrock-access-gateway). LiteLLM Bedrock setup docs are [here](https://docs.litellm.ai/docs/providers/bedrock).',
+	'settings.providerDesc.ollama': 'Read more about custom [Endpoints here](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-expose-ollama-on-my-network).',
+	'settings.providerDesc.vLLM': 'Read more about custom [Endpoints here](https://docs.vllm.ai/en/latest/getting_started/quickstart.html#openai-compatible-server).',
+	'settings.providerDesc.lmStudio': 'Read more about custom [Endpoints here](https://lmstudio.ai/docs/app/api/endpoints/openai).',
+	'settings.providerDesc.liteLLM': 'Read more about endpoints [here](https://docs.litellm.ai/docs/providers/openai_compatible).',
+	'settings.providerDesc.pollinations': 'Get your [API Key here](https://enter.pollinations.ai/). [API Docs](https://enter.pollinations.ai/api/docs).',
+	'settings.providerDesc.moonshot': 'Get your free [API Key here](https://platform.moonshot.ai/console/api-keys). Kimi K2 has a generous free tier. [Pricing](https://platform.moonshot.ai/docs/pricing).',
+	'settings.providerDesc.cerebras': 'Get your free [API Key here](https://cloud.cerebras.ai/). Free tier includes 1M tokens/day with no card required. [Docs](https://inference-docs.cerebras.ai/).',
+
+	// ── Setting titles (displayInfoOfSettingName.title) ─────────────────────
+	'settings.settingTitle.apiKey': 'API Key',
+	'settings.settingTitle.endpoint': 'Endpoint',
+	'settings.settingTitle.baseURL': 'baseURL',
+	'settings.settingTitle.customHeaders': 'Custom Headers',
+	'settings.settingTitle.region': 'Region',
+	'settings.settingTitle.apiVersion': 'API Version',
+	'settings.settingTitle.resource': 'Resource',
+	'settings.settingTitle.project': 'Project',
+
+	// ── Provider description extras (displayInfoOfProviderName.desc) ─────────
+	'settings.providerDescExtra.moonshot': 'Kimi K2 - #1 SWE-bench agentic coding. Free tier available.',
+	'settings.providerDescExtra.cerebras': 'Free tier: 1M tokens/day, ~2,600 tok/s, 8K context cap.',
 } as const;
 
 // allow-any-unicode-next-line
@@ -350,6 +711,609 @@ const ZH_TRANSLATIONS: Partial<Record<TranslationKey, string>> = {
 	'common.copy': '复制',
 	// allow-any-unicode-next-line
 	'common.copied': '已复制！',
+	// allow-any-unicode-next-line
+	'settings.models': '模型',
+	// allow-any-unicode-next-line
+	'settings.localProviders': '本地提供商',
+	// allow-any-unicode-next-line
+	'settings.mainProviders': '主要提供商',
+	// allow-any-unicode-next-line
+	'settings.featureOptions': '功能选项',
+	// allow-any-unicode-next-line
+	'settings.allSettings': '所有设置',
+	// allow-any-unicode-next-line
+	'settings.mcpShort': 'MCP',
+	// allow-any-unicode-next-line
+	'settings.general': '常规',
+	// allow-any-unicode-next-line
+	'settings.apiKey': 'API 密钥',
+	// allow-any-unicode-next-line
+	'settings.addModel': '添加模型',
+	// allow-any-unicode-next-line
+	'settings.removeModel': '移除',
+	// allow-any-unicode-next-line
+	'settings.enableProvider': '启用提供商',
+	// allow-any-unicode-next-line
+	'settings.localProvidersDesc': 'CortexIDE 可以访问您本地托管的任何模型。我们默认自动检测本地模型。',
+	// allow-any-unicode-next-line
+	'settings.mainProvidersDesc': 'CortexIDE 可以访问 Anthropic、OpenAI、OpenRouter 等提供商的模型。',
+	// allow-any-unicode-next-line
+	'settings.autocompleteDesc': '实验性功能。',
+	// allow-any-unicode-next-line
+	'settings.autocompleteHint': '仅适用于 FIM 模型。*',
+	// allow-any-unicode-next-line
+	'settings.applyDesc': '控制 Apply 按钮行为的设置。',
+	// allow-any-unicode-next-line
+	'settings.tools': '工具',
+	// allow-any-unicode-next-line
+	'settings.toolsDesc': '工具是大语言模型可以调用的函数。部分工具需要用户确认。',
+	// allow-any-unicode-next-line
+	'settings.enabled': '已启用',
+	// allow-any-unicode-next-line
+	'settings.disabled': '已禁用',
+	// allow-any-unicode-next-line
+	'settings.sameAsChat': '与对话模型相同',
+	// allow-any-unicode-next-line
+	'settings.differentModel': '不同模型',
+	// allow-any-unicode-next-line
+	'settings.fixLintErrors': '修复 lint 错误',
+	// allow-any-unicode-next-line
+	'settings.autoAcceptLLMChanges': '自动接受 LLM 修改',
+	// allow-any-unicode-next-line
+	'settings.routingPolicy': '路由策略',
+	// allow-any-unicode-next-line
+	'settings.noServersFound': '未找到服务器',
+	// allow-any-unicode-next-line
+	'settings.showInDropdown': '在下拉菜单中显示',
+	// allow-any-unicode-next-line
+	'settings.hideFromDropdown': '在下拉菜单中隐藏',
+	// allow-any-unicode-next-line
+	'settings.customModel': '自定义模型',
+	// allow-any-unicode-next-line
+	'settings.advancedSettings': '高级设置',
+	// allow-any-unicode-next-line
+	'settings.delete': '删除',
+	// allow-any-unicode-next-line
+	'settings.added': '已添加',
+	// allow-any-unicode-next-line
+	'settings.providerName': '提供商名称',
+	// allow-any-unicode-next-line
+	'settings.modelName': '模型名称',
+	// allow-any-unicode-next-line
+	'settings.fastApply': '快速应用',
+	// allow-any-unicode-next-line
+	'settings.slowApply': '慢速应用',
+	// allow-any-unicode-next-line
+	'settings.fastApplyDesc': '输出搜索/替换块',
+	// allow-any-unicode-next-line
+	'settings.slowApplyDesc': '重写整个文件',
+	// allow-any-unicode-next-line
+	'settings.codeModels': '代码模型',
+	// allow-any-unicode-next-line
+	'settings.visionModels': '视觉模型（图像分析）',
+	// allow-any-unicode-next-line
+	'settings.generalPurpose': '通用模型',
+	// allow-any-unicode-next-line
+	'settings.showSuggestionsOnSelect': '选中时显示建议',
+	// allow-any-unicode-next-line
+	'settings.enableYOLOMode': 'YOLO 模式',
+	// allow-any-unicode-next-line
+	'settings.installOllama': '安装 Ollama',
+	// allow-any-unicode-next-line
+	'settings.installing': '安装中…',
+	// allow-any-unicode-next-line
+	'settings.healthy': '正常运行',
+	// allow-any-unicode-next-line
+	'settings.waiting': '等待中',
+	// allow-any-unicode-next-line
+	'settings.installMethod': '安装方式',
+	// allow-any-unicode-next-line
+	'rules.title': '项目规则',
+	// allow-any-unicode-next-line
+	'rules.description': '在 .cortexide/rules/*.md 中定义的规则会注入到每个智能体会话中。',
+	// allow-any-unicode-next-line
+	'rules.noRules': '尚未定义规则',
+	// allow-any-unicode-next-line
+	'rules.createRule': '创建规则文件',
+	// allow-any-unicode-next-line
+	'rules.openRulesDir': '打开规则目录',
+	// allow-any-unicode-next-line
+	'common.add': '添加',
+	// allow-any-unicode-next-line
+	// ── Settings page additional translations ────────────────────────────────
+	'settings.confirmReset': '确认重置',
+	'settings.invalidJson': '无效的 JSON',
+	'settings.overrideDefaults': '覆盖模型默认值',
+	'settings.jsonAdvancedDesc': '查看 [源代码]({0}) 了解如何设置此 JSON（高级）。',
+	'settings.changeDefaultsFor': '修改 {0} 的默认值 ({1})',
+	'settings.save': '保存',
+	'settings.cancel': '取消',
+	'settings.confirm': '确认',
+	'settings.seeOnboarding': '查看引导界面？',
+	// allow-any-unicode-next-line
+	// ── Refresh buttons ──────────────────────────────────────────────────────
+	'settings.modelsUpToDate': '{0} 模型已是最新！',
+	'settings.providerNotFound': '{0} 未找到！',
+	'settings.manualRefresh': '手动刷新 {0} 模型。',
+	'settings.foundOnline': '{0}: 在线找到 {1} 个模型',
+	'settings.noOnlineCatalog': '{0}: 无在线目录 — 使用内置列表',
+	'settings.refreshCatalogFailed': '刷新 {0} 目录失败',
+	'settings.refreshModelCatalog': '刷新 {0} 模型目录',
+	// allow-any-unicode-next-line
+	// ── Ollama setup ─────────────────────────────────────────────────────────
+	'settings.ollamaSetup': 'Ollama 设置',
+	'settings.installOllamaBtn': '安装 Ollama',
+	'settings.installingOllama': '安装中…',
+	'settings.retry': '重试',
+	'settings.pullModel': '拉取模型：',
+	'settings.pull': '拉取',
+	'settings.deleteModel': '删除',
+	'settings.copyLog': '复制日志',
+	'settings.clear': '清除',
+	'settings.installMethod.auto': '自动',
+	'settings.installMethod.brew': 'Homebrew (macOS)',
+	'settings.installMethod.curl': 'Curl 脚本 (macOS/Linux)',
+	'settings.installMethod.winget': 'Winget (Windows)',
+	'settings.installMethod.choco': 'Chocolatey (Windows)',
+	'settings.autoTuneAfterPull': '拉取后自动调优',
+	'settings.enableRepoIndexer': '启用仓库索引器',
+	'settings.autoCompact': '自动压缩长时间的智能体运行',
+	'settings.lifecycleHooks': '生命周期钩子',
+	'settings.useHeadlessBrowsing': '使用无头浏览',
+	// allow-any-unicode-next-line
+	// ── Routing policy ──────────────────────────────────────────────────────
+	'settings.routingPolicyDesc': '控制 CortexIDE 如何在已配置的模型提供商之间选择。免费层级会跟踪每个提供商的配额，并在 429 错误时自动故障转移。',
+	'settings.routingPolicy.autoCheapest': '自动（最便宜可行）',
+	'settings.routingPolicy.freeTier': '免费层级',
+	'settings.routingPolicy.localOnly': '仅本地',
+	// allow-any-unicode-next-line
+	// ── YOLO Mode ───────────────────────────────────────────────────────────
+	'settings.yoloMode': 'YOLO 模式',
+	'settings.yoloModeDesc': '自动应用低风险编辑，无需确认。高风险编辑始终需要确认。',
+	'settings.yoloRiskThreshold': '风险阈值',
+	'settings.yoloRiskDesc': '风险低于此阈值的编辑将自动应用（0.0 = 安全，1.0 = 危险）',
+	'settings.yoloConfidenceThreshold': '置信度阈值',
+	'settings.yoloConfidenceDesc': '置信度高于此阈值的编辑将自动应用（0.0 = 不确定，1.0 = 确定）',
+	// allow-any-unicode-next-line
+	// ── Editor ──────────────────────────────────────────────────────────────
+	'settings.editor': '编辑器',
+	'settings.editorDesc': '控制 CortexIDE 建议在代码编辑器中的可见性设置。',
+	// allow-any-unicode-next-line
+	// ── One-Click Switch ────────────────────────────────────────────────────
+	'settings.oneClickSwitch': '一键切换',
+	'settings.oneClickSwitchDesc': '将您的编辑器设置迁移到 CortexIDE。',
+	// allow-any-unicode-next-line
+	// ── Import/Export ───────────────────────────────────────────────────────
+	'settings.importExport': '导入/导出',
+	'settings.importExportDesc': '在 CortexIDE 内外迁移设置和聊天记录。',
+	'settings.importSettings': '导入设置',
+	'settings.exportSettings': '导出设置',
+	'settings.resetSettings': '重置设置',
+	'settings.importChats': '导入聊天',
+	'settings.exportChats': '导出聊天',
+	'settings.resetChats': '重置聊天',
+	// allow-any-unicode-next-line
+	// ── Built-in Settings ───────────────────────────────────────────────────
+	'settings.builtinSettings': '内置设置',
+	'settings.builtinSettingsDesc': 'IDE 设置、键盘设置和主题自定义。',
+	'settings.generalSettings': '常规设置',
+	'settings.keyboardSettings': '键盘设置',
+	'settings.themeSettings': '主题设置',
+	'settings.openLogs': '打开日志',
+	// allow-any-unicode-next-line
+	// ── Metrics ─────────────────────────────────────────────────────────────
+	'settings.metrics': '指标',
+	'settings.metricsDesc': '基本的匿名使用情况跟踪帮助我们保持 CortexIDE 平稳运行。您可以在下方选择退出。无论此设置如何，CortexIDE 永远不会看到您的代码、消息或 API 密钥。',
+	// allow-any-unicode-next-line
+	// ── Auto-approve tools ──────────────────────────────────────────────────
+	'settings.autoApprove': '自动批准 {0}',
+	// allow-any-unicode-next-line
+	// ── Misc ────────────────────────────────────────────────────────────────
+	'settings.noToolsAvailable': '暂无工具可用',
+	'settings.command': '命令：',
+	'settings.detectedLocally': '本地检测到',
+	'settings.installOllamaModel': '请安装 Ollama 模型。我们会自动检测。',
+	'settings.addModelFor': '请为 {0} 添加模型（在模型部分）。',
+
+	'onboarding.localDescription': '您的代码永远不会离开本机。至少需要约 8 GB 内存。',
+	'onboarding.cloudDescription': '使用更强大的云端模型。需要 API 密钥。',
+	'onboarding.systemCheck': '正在检查系统…',
+	'onboarding.installingOllama': '正在安装 Ollama…',
+	'onboarding.downloadingModel': '正在下载模型…',
+	'onboarding.setupComplete': '设置完成！',
+	'onboarding.recommendedModel': '推荐用于您的硬件',
+	'onboarding.vramDetected': '已检测到 GPU 显存',
+	'onboarding.selectModelPack': '选择模型包',
+	'onboarding.modelPack.fast': '快速 (7B) — 适合 8 GB 内存/显存',
+	'onboarding.modelPack.balanced': '均衡 (14B) — 适合 16 GB 内存/显存',
+	'onboarding.modelPack.powerful': '强大 (22B) — 适合 24 GB+ 显存',
+	'onboarding.modelPack.reasoning': '推理 (16B MoE) — 深度思考,12 GB 显存',
+	'onboarding.startGuided': '开始引导设置',
+	'onboarding.startApp': '使用 CortexIDE 开始',
+	'onboarding.settingsAndThemes': '设置和主题',
+	'onboarding.transferSettings': '是否从现有编辑器导入您的设置?',
+	'onboarding.welcome': '欢迎',
+	'onboarding.headline': '使用真正内置 AI 的编辑器构建',
+	'express.title': '正在设置本地 AI…',
+	'express.subtitle': 'CortexIDE 正在准备您的私有设备端编程助手。',
+	'express.detecting': '正在检测您的硬件…',
+	'express.detected': '已检测到 {0} GB 显存。',
+	'express.detectedNoGPU': '未检测到独立 GPU — 使用小模型。',
+	'express.installPromptTitle': '是否安装 Ollama?',
+	'express.installPromptBody': 'CortexIDE 将安装 Ollama(本地 AI 运行时)以在您的电脑上私有运行模型。数据不会离开您的设备。',
+	'express.installConfirm': '安装 Ollama',
+	'express.installDecline': '改用免费云密钥',
+	'express.installing': '正在安装 Ollama…',
+	'express.pulling': '正在下载 {0}…',
+	'express.pullingPercent': '正在下载 {0} ({1}%)',
+	'express.ready': '就绪!本地 AI 已设置好。',
+	'express.startChatting': '开始对话',
+	'express.customize': '自定义设置',
+	'express.fallbackTitle': '使用免费云模型',
+	'express.fallbackBody': '无需本地安装。Groq 提供免费的 API 层级和快速的 Llama 模型。获取密钥(60 秒),粘贴在下面即可使用。',
+	'express.openGroqKeyPage': '打开 Groq 密钥页面',
+	'express.pasteKeyPlaceholder': '在此粘贴您的 Groq API 密钥(以 gsk_ 开头)',
+	'express.useGroqKey': '使用 Groq 继续',
+	'express.invalidKey': '密钥格式不正确。Groq 密钥以 "gsk_" 开头。',
+	'express.error.installFailed': 'Ollama 安装失败。您可以改用免费云密钥。',
+	'express.error.pullFailed': '模型下载失败。您可以重试或使用免费云密钥。',
+	'express.retry': '重试',
+	'express.useCloudInstead': '改用免费云密钥',
+	'express.dismiss': '暂时跳过',
+	'chat.placeholderAgent': '描述一项任务给智能体…',
+	'chat.history': '对话历史',
+	'chat.branchFromHere': '从此处分支',
+	'chat.copyMessage': '复制',
+	'chat.deleteThread': '删除对话',
+	'chat.duplicateThread': '复制对话',
+	'chat.generating': '正在生成…',
+	'chat.attachFile': '附加文件',
+	'chat.attachImage': '附加图片',
+	'chat.contextFiles': '上下文文件',
+	'chat.addContext': '添加上下文',
+	'chat.mode.ask': '询问',
+	'chat.mode.plan': '计划',
+	'chat.mode.gather': '收集',
+	'chat.model': '模型',
+	'chat.previousThreads': '历史对话',
+	'chat.suggestions': '建议',
+	'agent.planStep': '规划中',
+	'agent.executeStep': '执行中',
+	'agent.approvalRequired': '需要批准',
+	'agent.approve': '批准',
+	'agent.reject': '拒绝',
+	'agent.toolCall': '工具调用',
+	'agent.readingFile': '正在读取文件',
+	'agent.editingFile': '正在编辑文件',
+	'agent.runningCommand': '正在运行命令',
+	'agent.searchingCodebase': '正在搜索代码库',
+	'agent.steps': '步骤',
+	'agent.done': '完成',
+	'agent.failed': '失败',
+	'diff.acceptHunk': '接受此块',
+	'diff.rejectHunk': '拒绝此块',
+	'diff.nextHunk': '下一处更改',
+	'diff.prevHunk': '上一处更改',
+	'settings.providers': '提供商',
+	'settings.local': '本地设置',
+	'settings.mcp': 'MCP 服务器',
+	'settings.saved': '已保存',
+	'settings.endpoint': '端点 URL',
+	'local.ollama.notRunning': 'Ollama 未运行',
+	'local.ollama.start': '启动 Ollama',
+	'local.ollama.install': '安装 Ollama',
+	'local.model.downloading': '下载中',
+	'local.model.ready': '就绪',
+	'local.model.notFound': '未找到模型',
+	'local.model.pull': '下载模型',
+	'common.confirm': '确认',
+	'common.retry': '重试',
+	'common.back': '返回',
+	'common.next': '下一步',
+	'common.skip': '跳过',
+	'common.open': '打开',
+	'routing.policy.label': '路由策略',
+	'routing.policy.description': '控制 CortexIDE 如何在已配置的模型提供商之间进行选择。',
+	'routing.policy.autoCheapest': '自动(最便宜的可行选项)',
+	'routing.policy.freeTier': '免费层级阶梯',
+	'routing.policy.localOnly': '仅本地',
+	'routing.statusBar.label': '免费层级配额',
+	'routing.statusBar.none': '无免费层级提供商',
+	'routing.statusBar.entry': '{0}: {1}/{2} 每日请求数',
+	'routing.statusBar.entryRpm': '{0}: {1}/{2} 每分钟请求数',
+	'routing.statusBar.exhausted': '{0}: 已用尽',
+	'routing.statusBar.uncapped': '{0}: 无限制',
+	'routing.statusBar.tooltipTitle': '免费层级提供商配额',
+	'routing.statusBar.tooltipNoProviders': '未配置免费层级提供商。添加免费层级 API 密钥(Groq、Gemini、OpenRouter、Mistral)以查看实时配额跟踪。',
+	'routing.statusBar.allExhausted': '免费配额已用尽',
+	'routing.statusBar.allExhaustedHint': '所有免费层级配额已用尽 - 切换到本地模型或添加 API 密钥。',
+
+	// allow-any-unicode-next-line
+	'onboarding.highlights.chatQuickEdit': '聊天 + 快速编辑',
+	// allow-any-unicode-next-line
+	'onboarding.highlights.fastApply': 'Fast Apply 差异',
+	// allow-any-unicode-next-line
+	'onboarding.highlights.pdfImage': 'PDF 和图片上传',
+	// allow-any-unicode-next-line
+	'onboarding.highlights.localCloud': '本地和云模型',
+	// allow-any-unicode-next-line
+	'onboarding.stats.uploads.label': '上传',
+	// allow-any-unicode-next-line
+	'onboarding.stats.uploads.value': 'PDF + 图片',
+	// allow-any-unicode-next-line
+	'onboarding.stats.uploads.detail': '将规格说明、截图和研究资料直接拖入对话',
+	'onboarding.stats.fastApply.label': 'Fast Apply',
+	// allow-any-unicode-next-line
+	'onboarding.stats.fastApply.value': '逐行',
+	// allow-any-unicode-next-line
+	'onboarding.stats.fastApply.detail': '从生成的差异中审批每个更改',
+	// allow-any-unicode-next-line
+	'onboarding.stats.modelRouter.label': '模型路由',
+	// allow-any-unicode-next-line
+	'onboarding.stats.modelRouter.value': '自动切换',
+	// allow-any-unicode-next-line
+	'onboarding.stats.modelRouter.detail': '根据任务选择 Anthropic、GPT-4o、Gemini、DeepSeek 或 Ollama',
+	// allow-any-unicode-next-line
+	'onboarding.stats.agentTools.label': '智能体工具',
+	// allow-any-unicode-next-line
+	'onboarding.stats.agentTools.value': '{0} 个内置',
+	// allow-any-unicode-next-line
+	'onboarding.stats.agentTools.detail': '文件编辑、终端、网页搜索、LSP 导航、代码审查等',
+	// allow-any-unicode-next-line
+	'onboarding.tab.free': '免费',
+	// allow-any-unicode-next-line
+	'onboarding.tab.paid': '付费',
+	// allow-any-unicode-next-line
+	'onboarding.tab.local': '本地',
+	// allow-any-unicode-next-line
+	'onboarding.tab.cloudOther': '云/其他',
+	// allow-any-unicode-next-line
+	'onboarding.tab.free.desc': '提供 100% 免费额度的提供商。可添加任意多个！',
+	// allow-any-unicode-next-line
+	'onboarding.tab.paid.desc': '直接连接任意提供商（自带密钥）。',
+	// allow-any-unicode-next-line
+	'onboarding.tab.local.desc': '已激活的提供商应自动出现。可添加任意多个！',
+	// allow-any-unicode-next-line
+	'onboarding.tab.cloudOther.desc': '可添加任意多个！如需自定义配置请联系我们。',
+	// allow-any-unicode-next-line
+	'onboarding.feature.chat': '聊天',
+	// allow-any-unicode-next-line
+	'onboarding.feature.quickEdit': '快速编辑',
+	// allow-any-unicode-next-line
+	'onboarding.feature.autocomplete': '自动补全',
+	'onboarding.feature.fastApply': 'Fast Apply',
+	// allow-any-unicode-next-line
+	'onboarding.feature.sourceControl': '源代码管理',
+	// allow-any-unicode-next-line
+	'onboarding.step02': '步骤 02',
+	// allow-any-unicode-next-line
+	'onboarding.chooseProviders': '选择您的模型提供商',
+	// allow-any-unicode-next-line
+	'onboarding.chooseProvidersDesc': '同时加载多个提供商。CortexIDE 可以将聊天、快速编辑和自动补全路由到每次请求中最强的模型。',
+	// allow-any-unicode-next-line
+	'onboarding.featureCoverage': '功能覆盖',
+	// allow-any-unicode-next-line
+	'onboarding.connected': '已连接',
+	// allow-any-unicode-next-line
+	'onboarding.pending': '待连接',
+	// allow-any-unicode-next-line
+	'onboarding.setupLocalAuto': '自动设置本地 AI',
+	// allow-any-unicode-next-line
+	'onboarding.setupLocalAutoDesc': '安装 Ollama + 下载适合您硬件的最佳模型 - 2 分钟引导设置',
+	// allow-any-unicode-next-line
+	'onboarding.addProvider': '添加 {0}',
+	// allow-any-unicode-next-line
+	'onboarding.details': '详情',
+	// allow-any-unicode-next-line
+	'onboarding.localLabel': '本地',
+	// allow-any-unicode-next-line
+	'onboarding.modelsLabel': '模型',
+	// allow-any-unicode-next-line
+	'onboarding.localModelsDesc': '本地模型会自动检测。添加自定义条目以精细调整路由。',
+	// allow-any-unicode-next-line
+	'onboarding.connectOneModel': '请至少连接一个支持聊天的模型再继续。',
+	// allow-any-unicode-next-line
+	'onboarding.tooltip.gemini': 'Gemini 2.5 Pro 每天提供 25 次免费聊天，Flash 约 500 次。额度用完成后可升级。',
+	// allow-any-unicode-next-line
+	'onboarding.tooltip.openRouter': 'OpenRouter 每天提供 50 次免费聊天（存入 $10 后 1000 次），适用于标记为 :free 的模型。',
+	// allow-any-unicode-next-line
+	'onboarding.tooltip.pollinations': '便宜的 API，支持多种模型（Pollen 积分）。在 enter.pollinations.ai 获取密钥。',
+	// allow-any-unicode-next-line
+	'onboarding.fillRequired': '请填写所有必填字段或选择其他提供商',
+	// allow-any-unicode-next-line
+	'onboarding.welcomeDesc': 'CortexIDE 将聊天、快速编辑、Fast Apply 和源代码管理保持在同一个深色工作区中 - 并添加了原生 PDF 和图片上传功能，让产品规格和设计稿伴随每次对话。',
+	// allow-any-unicode-next-line
+	'onboarding.yes': '是',
+	// allow-any-unicode-next-line
+	'onboarding.no': '否',
+	// allow-any-unicode-next-line
+	'onboarding.yesStar': '是*',
+	// allow-any-unicode-next-line
+	'onboarding.wantToUse.smart.basic': '在基准测试中表现最佳的模型。',
+	// allow-any-unicode-next-line
+	'onboarding.wantToUse.private.basic': '在您的计算机或本地网络上托管，实现完全的数据隐私。',
+	// allow-any-unicode-next-line
+	'onboarding.wantToUse.cheap.basic': '免费和经济实惠的选项。',
+	// allow-any-unicode-next-line
+	'onboarding.wantToUse.smart.detailed': '最智能，最适合智能体模式。',
+	// allow-any-unicode-next-line
+	'onboarding.wantToUse.private.detailed': '私有托管，您的数据不会离开您的计算机或网络。',
+	// allow-any-unicode-next-line
+	'onboarding.wantToUse.cheap.detailed': '使用 Gemini 2.5 Pro 等优惠，或使用 Ollama 或 vLLM 免费自托管模型。',
+	// allow-any-unicode-next-line
+	'localWizard.error.notRunning': 'Ollama 安装完成但服务未运行。请手动启动 Ollama。',
+	// allow-any-unicode-next-line
+	'localWizard.error.installFailed': '安装 Ollama 失败。请从 https://ollama.com 手动安装',
+	// allow-any-unicode-next-line
+	'localWizard.error.downloadFailed': '下载模型失败。请检查网络连接后重试。',
+	// allow-any-unicode-next-line
+	'localWizard.error.verifyFailed': '验证模型能力失败。请检查模型是否正确安装。',
+	// allow-any-unicode-next-line
+	'localWizard.error.skipped': '验证已跳过',
+	// allow-any-unicode-next-line
+	'localWizard.error.defaultsFailed': '设置默认模型失败。您可以在设置中手动配置。',
+	// allow-any-unicode-next-line
+	'localWizard.setupError': '设置错误',
+	// allow-any-unicode-next-line
+	'localWizard.failedWhileDownloading': '下载失败：{0}',
+	// allow-any-unicode-next-line
+	'localWizard.required': '需要：{0}',
+	// allow-any-unicode-next-line
+	'localWizard.available': '可用：{0}',
+	// allow-any-unicode-next-line
+	'localWizard.startOver': '重新开始',
+	// allow-any-unicode-next-line
+	'localWizard.skipSetup': '跳过设置',
+	// allow-any-unicode-next-line
+	'localWizard.stepProgress': '步骤 {0}/{1}',
+	// allow-any-unicode-next-line
+	'localWizard.chooseSetup': '选择您的设置',
+	// allow-any-unicode-next-line
+	'localWizard.chooseSetupDesc': '开始使用 CortexIDE。选择本地模型以保护隐私，或使用云提供商。',
+	// allow-any-unicode-next-line
+	'localWizard.useLocalModels': '使用本地模型（无需 API 密钥）',
+	// allow-any-unicode-next-line
+	'localWizard.useLocalModelsDesc': '在您的计算机上运行模型以获得完全的隐私。我们将帮助您设置 Ollama。',
+	// allow-any-unicode-next-line
+	'localWizard.useCloudProvider': '使用云提供商',
+	// allow-any-unicode-next-line
+	'localWizard.useCloudProviderDesc': '通过 API 密钥连接 Anthropic、OpenAI 或其他云提供商。',
+	// allow-any-unicode-next-line
+	'localWizard.decideLater': '稍后决定',
+	// allow-any-unicode-next-line
+	'localWizard.systemCheck': '系统检查',
+	// allow-any-unicode-next-line
+	'localWizard.ollamaInstalled': 'Ollama 已安装',
+	// allow-any-unicode-next-line
+	'localWizard.ollamaRunning': 'Ollama 运行中',
+	// allow-any-unicode-next-line
+	'localWizard.diskSpace': '磁盘空间：{0} GB 可用',
+	// allow-any-unicode-next-line
+	'localWizard.chooseModelPack': '选择模型包',
+	// allow-any-unicode-next-line
+	'localWizard.detectedVram': '检测到 {0} GB GPU 显存 - 已为您的硬件预选最佳模型。',
+	// allow-any-unicode-next-line
+	'localWizard.selectModelPackDesc': '选择针对不同用例优化的预配置模型集。',
+	// allow-any-unicode-next-line
+	'localWizard.bestForHardware': '最适合您的硬件',
+	// allow-any-unicode-next-line
+	'localWizard.recommended': '推荐',
+	'localWizard.gb': '{0} GB',
+	// allow-any-unicode-next-line
+	'localWizard.ram': '{0}+ GB 内存',
+	// allow-any-unicode-next-line
+	'localWizard.downloadingModel': '正在下载 {0}...',
+	// allow-any-unicode-next-line
+	'localWizard.modelsProgress': '{0}/{1} 个模型',
+	// allow-any-unicode-next-line
+	'localWizard.downloading': '下载中...',
+	// allow-any-unicode-next-line
+	'localWizard.downloadModels': '下载模型',
+	// allow-any-unicode-next-line
+	'localWizard.verifyingCapabilities': '验证能力',
+	// allow-any-unicode-next-line
+	'localWizard.verifyingDesc': '测试您的本地模型是否正常工作。',
+	// allow-any-unicode-next-line
+	'localWizard.testing': '正在测试 {0}...',
+	// allow-any-unicode-next-line
+	'localWizard.runVerification': '运行验证',
+	// allow-any-unicode-next-line
+	'localWizard.verificationResults': '验证结果',
+	// allow-any-unicode-next-line
+	'localWizard.someTestsFailed': '部分验证测试失败。您仍可以继续，但某些功能可能无法正常工作。',
+	// allow-any-unicode-next-line
+	'localWizard.continue': '继续',
+	// allow-any-unicode-next-line
+	'localWizard.continueAnyway': '仍然继续',
+	// allow-any-unicode-next-line
+	'localWizard.skipped': '(已跳过)',
+	// allow-any-unicode-next-line
+	'localWizard.chat': '聊天',
+	// allow-any-unicode-next-line
+	'localWizard.toolCalling': '工具调用',
+	// allow-any-unicode-next-line
+	'localWizard.webCalling': '网页调用',
+	// allow-any-unicode-next-line
+	'localWizard.setupComplete': '设置完成！',
+	// allow-any-unicode-next-line
+	'localWizard.setupCompleteDesc': '您的本地模型已配置完毕，随时可用。CortexIDE 将默认使用本地模型。',
+	// allow-any-unicode-next-line
+	'localWizard.startUsingCortexIDE': '开始使用 CortexIDE',
+
+	// ── Feature names (displayInfoOfFeatureName) ────────────────────────────
+	// allow-any-unicode-next-line
+	'settings.feature.Autocomplete': '自动补全',
+	// allow-any-unicode-next-line
+	'settings.feature.Ctrl+K': '快速编辑',
+	// allow-any-unicode-next-line
+	'settings.feature.Chat': '聊天',
+	// allow-any-unicode-next-line
+	'settings.feature.Apply': '应用',
+	// allow-any-unicode-next-line
+	'settings.feature.SCM': '提交信息生成器',
+
+	// ── Provider descriptions (subTextMdOfProviderName, Markdown) ───────────
+	// allow-any-unicode-next-line
+	'settings.providerDesc.anthropic': '在[此处获取 API 密钥](https://console.anthropic.com/settings/keys)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.openAI': '在[此处获取 API 密钥](https://platform.openai.com/api-keys)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.deepseek': '在[此处获取 API 密钥](https://platform.deepseek.com/api_keys)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.openRouter': '在[此处获取 API 密钥](https://openrouter.ai/settings/keys)。阅读[速率限制说明](https://openrouter.ai/docs/api-reference/limits)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.gemini': '在[此处获取 API 密钥](https://aistudio.google.com/apikey)。阅读[速率限制说明](https://ai.google.dev/gemini-api/docs/rate-limits#current-rate-limits)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.groq': '在[此处获取 API 密钥](https://console.groq.com/keys)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.xAI': '在[此处获取 API 密钥](https://console.x.ai)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.mistral': '在[此处获取 API 密钥](https://console.mistral.ai/api-keys)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.openAICompatible': '使用任何 OpenAI 兼容的提供商（可用于 llama.cpp 等）。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.googleVertex': '使用 Vertex 前必须先进行身份验证。了解更多[端点信息](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/call-vertex-using-openai-library)和[区域信息](https://cloud.google.com/vertex-ai/docs/general/locations#available-regions)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.microsoftAzure': '了解更多[端点信息](https://learn.microsoft.com/en-us/rest/api/aifoundry/model-inference/get-chat-completions/get-chat-completions?view=rest-aifoundry-model-inference-2024-05-01-preview&tabs=HTTP)，在[此处获取 API 密钥](https://learn.microsoft.com/en-us/azure/search/search-security-api-keys?tabs=rest-use%2Cportal-find%2Cportal-query#find-existing-keys)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.awsBedrock': '通过 LiteLLM 代理或 AWS [Bedrock-Access-Gateway](https://github.com/aws-samples/bedrock-access-gateway) 连接。LiteLLM Bedrock 设置文档在[此处](https://docs.litellm.ai/docs/providers/bedrock)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.ollama': '了解更多自定义[端点信息](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-expose-ollama-on-my-network)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.vLLM': '了解更多自定义[端点信息](https://docs.vllm.ai/en/latest/getting_started/quickstart.html#openai-compatible-server)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.lmStudio': '了解更多自定义[端点信息](https://lmstudio.ai/docs/app/api/endpoints/openai)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.liteLLM': '了解更多[端点信息](https://docs.litellm.ai/docs/providers/openai_compatible)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.pollinations': '在[此处获取 API 密钥](https://enter.pollinations.ai/)。[API 文档](https://enter.pollinations.ai/api/docs)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.moonshot': '在[此处免费获取 API 密钥](https://platform.moonshot.ai/console/api-keys)。Kimi K2 提供丰厚的免费额度。[定价信息](https://platform.moonshot.ai/docs/pricing)。',
+	// allow-any-unicode-next-line
+	'settings.providerDesc.cerebras': '在[此处免费获取 API 密钥](https://cloud.cerebras.ai/)。免费额度包含每天 100 万 token，无需信用卡。[文档](https://inference-docs.cerebras.ai/)。',
+
+	// ── Setting titles (displayInfoOfSettingName.title) ─────────────────────
+	// allow-any-unicode-next-line
+	'settings.settingTitle.apiKey': 'API 密钥',
+	// allow-any-unicode-next-line
+	'settings.settingTitle.endpoint': '端点',
+	'settings.settingTitle.baseURL': 'baseURL',
+	// allow-any-unicode-next-line
+	'settings.settingTitle.customHeaders': '自定义请求头',
+	// allow-any-unicode-next-line
+	'settings.settingTitle.region': '区域',
+	// allow-any-unicode-next-line
+	'settings.settingTitle.apiVersion': 'API 版本',
+	// allow-any-unicode-next-line
+	'settings.settingTitle.resource': '资源',
+	// allow-any-unicode-next-line
+	'settings.settingTitle.project': '项目',
+
+	// ── Provider description extras (displayInfoOfProviderName.desc) ─────────
+	// allow-any-unicode-next-line
+	'settings.providerDescExtra.moonshot': 'Kimi K2 — SWE-bench 第一的智能编程。提供免费额度。',
+	// allow-any-unicode-next-line
+	'settings.providerDescExtra.cerebras': '免费额度：每天 100 万 token，约 2,600 tok/s，8K 上下文上限。',
 };
 
 const ES_TRANSLATIONS: Partial<Record<TranslationKey, string>> = {
@@ -638,6 +1602,164 @@ const HI_TRANSLATIONS: Partial<Record<TranslationKey, string>> = {
 	'common.close': 'बंद करें',
 	// allow-any-unicode-next-line
 	'common.done': 'हो गया',
+	// allow-any-unicode-next-line
+	'settings.addConnection': '添加连接',
+	// allow-any-unicode-next-line
+	'settings.connectionName': '连接名称',
+	// allow-any-unicode-next-line
+	'settings.connection': '连接',
+	// allow-any-unicode-next-line
+	'settings.addAModel': '添加模型',
+	// allow-any-unicode-next-line
+	'settings.ollamaSetupRev': 'Ollama 设置 (rev 2025-10-30-1)',
+	// allow-any-unicode-next-line
+	'settings.autoCompactTooltip': '当智能体运行接近模型上下文窗口时，发送压缩视图（保留任务和最近消息）以继续运行而非溢出。非破坏性：存储的对话不变。',
+	// allow-any-unicode-next-line
+	'settings.lifecycleHooksTooltip': '在智能体事件（工具前、工具后、智能体停止）时从 .cortexide/hooks.json 运行自定义命令。命令静默运行，无 shell，即发即忘。',
+	// allow-any-unicode-next-line
+	'settings.useHeadlessBrowsingTooltip': '使用无头 BrowserWindow 从复杂页面提取更好的内容。禁用以使用直接 HTTP 获取。',
+	// allow-any-unicode-next-line
+	'settings.vision': '(视觉)',
+	// allow-any-unicode-next-line
+	'settings.visionBetterQuality': '(视觉，更高质量)',
+	// allow-any-unicode-next-line
+	'settings.visionFaster': '(视觉，更快)',
+	// allow-any-unicode-next-line
+	'settings.manuallyInstall1': '1. 如果安装未开始，请从 [ollama.com/download](https://ollama.com/download) 手动下载 Ollama。',
+	// allow-any-unicode-next-line
+	'settings.manuallyInstall2': '2. 可选：运行 `ollama pull llama3.1` 安装入门模型。',
+	// allow-any-unicode-next-line
+	'settings.autoDetectModels': 'CortexIDE 自动检测本地运行的模型并启用它们。',
+	// allow-any-unicode-next-line
+	'settings.transferFrom': '从 {0} 迁移',
+	// allow-any-unicode-next-line
+	'settings.transferring': '正在迁移',
+	// allow-any-unicode-next-line
+	'settings.settingsTransferred': '设置已迁移',
+	// allow-any-unicode-next-line
+	'settings.optOutRestart': '退出（需重启）',
+	// allow-any-unicode-next-line
+	'settings.aiInstructions': 'AI 指令',
+	// allow-any-unicode-next-line
+	'settings.aiInstructionsDesc': '包含在所有 AI 请求中的系统指令。',
+	// allow-any-unicode-next-line
+	'settings.aiInstructionsDesc2': '对于项目范围的规则，使用 `.cortexide/rules/*.md` 文件 - 见下方的项目规则。',
+	// allow-any-unicode-next-line
+	'settings.disableSystemMessage': '禁用系统消息',
+	// allow-any-unicode-next-line
+	'settings.disableSystemMessageDesc': '禁用后，CortexIDE 不会在系统消息中包含除您上方指定的内容之外的任何内容。',
+	// allow-any-unicode-next-line
+	'settings.scmDesc': '控制提交消息生成器行为的设置。',
+	// allow-any-unicode-next-line
+	'settings.addMcpServer': '添加 MCP 服务器',
+	// allow-any-unicode-next-line
+	'settings.mcpDesc': '使用模型上下文协议为智能体模式提供更多工具。',
+	// allow-any-unicode-next-line
+	'settings.playwrightAdded': '已将 Playwright MCP 服务器（浏览器自动化）添加到 mcp.json。首次使用时通过 npx 连接。',
+	// allow-any-unicode-next-line
+	'settings.playwrightExists': 'mcp.json 中已存在 "playwright" MCP 服务器。',
+	// allow-any-unicode-next-line
+	'settings.startingInstall': '正在启动 Ollama 安装并打开终端...',
+	// allow-any-unicode-next-line
+	'settings.installerLaunched': '安装器已启动。正在检测模型...',
+	// allow-any-unicode-next-line
+	'settings.playwrightAddFailed': '无法添加 Playwright MCP：{0}',
+	// allow-any-unicode-next-line
+	'settings.playwrightButton': '+ Playwright（浏览器自动化）',
+	// allow-any-unicode-next-line
+	'settings.importedSuccess': '{0} 导入成功！',
+	// allow-any-unicode-next-line
+	'settings.importFailed': '导入 {0} 失败',
+	// allow-any-unicode-next-line
+	'settings.confirmDeleteModel': '从 Ollama 删除模型 "{0}"？',
+	// allow-any-unicode-next-line
+	'settings.selectModelPull': '请选择要拉取的模型。',
+	// allow-any-unicode-next-line
+	'settings.selectModelDelete': '请选择要删除的模型。',
+	// allow-any-unicode-next-line
+	'settings.modelPulledSuccess': '模型 "{0}" 拉取成功。',
+	// allow-any-unicode-next-line
+	'settings.modelDeletedSuccess': '模型 "{0}" 删除成功。',
+	// allow-any-unicode-next-line
+	'settings.pullStarted': '已开始拉取 "{0}"。大模型可能需要一些时间。请查看终端进度。',
+	// allow-any-unicode-next-line
+	'settings.warmingIndex': '正在预热项目索引...',
+	// allow-any-unicode-next-line
+	'settings.indexWarmed': '项目索引已预热。',
+	// allow-any-unicode-next-line
+	'settings.modelPullFailed': '拉取模型 "{0}" 失败。请查看终端详情。',
+	// allow-any-unicode-next-line
+	'settings.modelDeleteFailed': '删除模型 "{0}" 失败。请查看终端详情。',
+	// allow-any-unicode-next-line
+	'settings.deleteTimeout': '删除 "{0}" 的命令超时。请检查终端查看是否完成。',
+	// allow-any-unicode-next-line
+	'settings.pullFailedShort': '拉取 {0} 失败。请查看终端详情。',
+	// allow-any-unicode-next-line
+	'settings.pullSuccess': '成功拉取 {0}',
+	// allow-any-unicode-next-line
+	'settings.pullFailedExit': '拉取 {0} 失败（退出码 {1}）。请查看终端详情。',
+	// allow-any-unicode-next-line
+	'settings.pullInProgress': '正在拉取 {0}...',
+	// allow-any-unicode-next-line
+	'settings.pullInProgressLong': '正在拉取 {0}...（大模型可能需要时间）',
+	// allow-any-unicode-next-line
+	'settings.pullError': '拉取 {0} 出错：{1}',
+	// allow-any-unicode-next-line
+	'settings.pullStartFailed': '开始拉取失败：{0}',
+	// allow-any-unicode-next-line
+	'settings.deleteStarted': '正在删除 {0}...',
+	// allow-any-unicode-next-line
+	'settings.deleteSuccess': '成功删除 {0}',
+	// allow-any-unicode-next-line
+	'settings.deleteFailedExit': '删除 {0} 失败（退出码 {1}）。请查看终端详情。',
+	// allow-any-unicode-next-line
+	'settings.deleteTimeoutShort': '删除 {0} 的命令超时。命令可能仍在运行。',
+	// allow-any-unicode-next-line
+	'settings.deleteError': '删除 {0} 出错：{1}',
+	// allow-any-unicode-next-line
+	'settings.deleteStartFailed': '开始删除失败：{0}',
+	// allow-any-unicode-next-line
+	'settings.installStarted': 'Ollama 安装已在集成终端中开始。模型就绪后将出现。',
+	// allow-any-unicode-next-line
+	'settings.installStartFailedNotif': '开始安装 Ollama 失败。请重试或手动安装。',
+	// allow-any-unicode-next-line
+	'settings.installerRunning': '正在终端中运行安装程序...',
+	// allow-any-unicode-next-line
+	'settings.installStartFailed': '开始安装失败。请查看终端或尝试手动安装。',
+	// allow-any-unicode-next-line
+	'settings.ollamaRunning': 'Ollama 正在运行。模型即将出现。',
+	// allow-any-unicode-next-line
+	'settings.noWorkspace': '未打开工作区文件夹。',
+	// allow-any-unicode-next-line
+	'settings.newRule': '# 新规则',
+	// allow-any-unicode-next-line
+	'settings.ruleDesc': '在此描述规则。',
+	// allow-any-unicode-next-line
+	'settings.clickToOpen': '点击打开规则文件',
+	// allow-any-unicode-next-line
+	'settings.aiInstructionsPlaceholder': '不要更改我的缩进或删除我的注释。编写 TS 或 JS 时，不要添加分号。尽可能使用 Rust 编写新代码。',
+	// allow-any-unicode-next-line
+	'settings.autoDetectLocal': '自动检测本地提供商和模型（{0}）。',
+	// allow-any-unicode-next-line
+	'settings.addTooltip': '添加 {0} 以启用',
+	// allow-any-unicode-next-line
+	'settings.recommendOllama': '我们建议您使用 Ollama 中最大的 qwen2.5-coder 模型（试试 qwen2.5-coder:3b）。',
+	// allow-any-unicode-next-line
+	'settings.modelNotFound': 'CortexIDE 未识别该模型。',
+	// allow-any-unicode-next-line
+	'settings.modelPackaged': '{0} 随 CortexIDE 打包，您无需更改这些设置。',
+	// allow-any-unicode-next-line
+	'settings.modelRecognized': 'CortexIDE 识别 {0}（"{1}"）。',
+	// allow-any-unicode-next-line
+	'settings.thisModelExists': '该模型已存在。',
+	// allow-any-unicode-next-line
+	'settings.selectProvider': '请选择提供商。',
+	// allow-any-unicode-next-line
+	'settings.enterModelName': '请输入模型名称。',
+	// allow-any-unicode-next-line
+	'settings.language': '语言',
+	// allow-any-unicode-next-line
+	'settings.languageDesc': '选择 CortexIDE 界面的显示语言。',
 };
 
 const LOCALE_BUNDLES: Record<SupportedLocale, Partial<Record<TranslationKey, string>>> = {
@@ -700,7 +1822,16 @@ class CortexideI18nService extends Disposable implements ICortexideI18nService {
 	}
 
 	private _detectLocale(): SupportedLocale {
-		// VS Code injects locale into window.navigator or via the `locale` global
+		// 1. Check VS Code NLS language (set by --locale or --lang)
+		try {
+			const nlsLang = (globalThis as any)._VSCODE_NLS_LANGUAGE;
+			if (typeof nlsLang === 'string') {
+				const short = nlsLang.split('-')[0].toLowerCase() as SupportedLocale;
+				if (short in LOCALE_BUNDLES) return short;
+			}
+		} catch { /* ignore */ }
+
+		// 2. Check navigator.language
 		try {
 			const lang = (globalThis as any).navigator?.language ?? 'en';
 			const short = lang.split('-')[0].toLowerCase() as SupportedLocale;

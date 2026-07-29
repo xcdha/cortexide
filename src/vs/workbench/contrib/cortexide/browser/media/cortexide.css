@@ -15,9 +15,7 @@
  * or via a theme extension. All values below are defaults only.
  * =========================================================================== */
 
-.void-scope,
-.cortex-onboarding-root,
-.monaco-workbench .part.auxiliarybar > .content {
+:root {
 	/* -- Core surfaces (dark theme - light overrides below) ----------------- */
 	/* Stepped from near-black to visible dark grey so depth reads clearly.    */
 	--cortex-surface-0:     #0a0a0d;   /* deepest background (onboarding overlay) */
@@ -181,17 +179,11 @@ body.monaco-workbench,
 	box-shadow: var(--cortex-shadow-hairline);
 }
 
-/* backdrop-filter on the title bar creates a stacking context that clips menubar
- * dropdowns on every platform (issues #8, #68). Keep blur on the status bar only. */
-.monaco-workbench .part.titlebar {
+/* Disable backdrop-filter on Windows title bar - causes stacking context bugs
+ * that prevent menubar dropdowns from rendering above the title bar. */
+.monaco-workbench.windows .part.titlebar {
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-}
-
-/* Ensure menubar / context menus render above the custom title bar chrome. */
-.monaco-workbench .monaco-menu-container,
-.monaco-workbench .context-view.monaco-menu-container {
-	z-index: 2500;
 }
 
 .monaco-workbench .part.sidebar > .content .pane-header,
@@ -428,92 +420,6 @@ body.monaco-workbench,
 }
 
 /* ===========================================================================
- * Command palette / quick input
- * Rounded, blurred, elevated above the editor surface.
- * =========================================================================== */
-.monaco-workbench .quick-input-widget {
-	background: var(--vscode-quickInput-background, var(--vscode-editorWidget-background)) !important;
-	color: var(--vscode-quickInput-foreground, var(--vscode-foreground)) !important;
-	border-radius: 20px !important;
-	border: 1px solid var(--vscode-widget-border, var(--vscode-input-border)) !important;
-	box-shadow: var(--vscode-widget-shadow, 0 8px 32px rgba(0, 0, 0, 0.35)) !important;
-	backdrop-filter: blur(24px);
-	-webkit-backdrop-filter: blur(24px);
-	transform: none !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-header,
-.monaco-workbench .quick-input-widget .quick-input-and-message,
-.monaco-workbench .quick-input-widget .quick-input-check-all {
-	background: transparent !important;
-	border-bottom: 1px solid color-mix(in srgb, var(--cortex-border-weak) 70%, transparent) !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-header .monaco-inputbox,
-.monaco-workbench .quick-input-widget .monaco-inputbox {
-	background: var(--vscode-input-background) !important;
-	border: 1px solid var(--vscode-input-border) !important;
-	border-radius: 12px !important;
-	transition: border-color var(--cortex-transition-fast) !important;
-}
-.monaco-workbench .quick-input-widget .quick-input-header .monaco-inputbox:focus-within,
-.monaco-workbench .quick-input-widget .monaco-inputbox:focus-within {
-	border-color: var(--vscode-focusBorder) !important;
-	box-shadow: 0 0 0 1px var(--vscode-focusBorder) !important;
-}
-
-.monaco-workbench .quick-input-widget .monaco-inputbox input {
-	background: transparent !important;
-	color: var(--vscode-input-foreground) !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-list {
-	background: transparent !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-list .quick-input-list-entry {
-	background: transparent !important;
-	color: var(--cortex-text-muted) !important;
-	border-radius: 10px !important;
-	border: 1px solid transparent !important;
-	padding: 5px 10px !important;
-	height: 30px !important;
-	min-height: 30px !important;
-	max-height: 30px !important;
-	box-sizing: border-box !important;
-	transition:
-		background-color var(--cortex-transition-fast),
-		border-color var(--cortex-transition-fast),
-		color var(--cortex-transition-fast) !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-list .monaco-list-row {
-	height: 30px !important;
-	min-height: 30px !important;
-	max-height: 30px !important;
-	box-sizing: border-box !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-list .quick-input-list-entry:hover,
-.monaco-workbench .quick-input-widget .quick-input-list .quick-input-list-entry.focused,
-.monaco-workbench .quick-input-widget .quick-input-list .quick-input-list-entry.selected {
-	background: color-mix(in srgb, var(--cortex-brand) 10%, var(--cortex-surface-2) 90%) !important;
-	border-color: color-mix(in srgb, var(--cortex-brand) 30%, transparent) !important;
-	color: var(--cortex-text-strong) !important;
-	height: 30px !important;
-	min-height: 30px !important;
-	max-height: 30px !important;
-	padding: 5px 10px !important;
-}
-
-.monaco-workbench .quick-input-widget .quick-input-message {
-	color: var(--cortex-text-subtle) !important;
-}
-.monaco-workbench .quick-input-widget .quick-input-action-bar .action-label {
-	color: var(--cortex-text-muted) !important;
-}
-
-/* ===========================================================================
  * Responsive layout
  *
  * < 480px  → mobile / small tablet (touch-first, 44px targets)
@@ -592,14 +498,8 @@ body.monaco-workbench,
  * correctly on a light background. All other CSS rules stay the same.
  * =========================================================================== */
 
-body.vscode-light .void-scope,
-body.vscode-light .cortex-onboarding-root,
-body.vscode-light .monaco-workbench .part.auxiliarybar > .content,
-body.vscode-light,
-.vscode-light .void-scope,
-.vscode-light .cortex-onboarding-root,
-.vscode-light .monaco-workbench .part.auxiliarybar > .content,
-.vscode-light {
+body:has(.monaco-workbench.vs),
+.monaco-workbench.vs {
 	--cortex-surface-0:     #ffffff;
 	--cortex-surface-1:     #f7f7fa;
 	--cortex-surface-1-alt: #f1f1f6;
@@ -631,11 +531,29 @@ body.vscode-light,
 	--cortex-scrollbar-thumb:       #c4c4d8;
 	--cortex-scrollbar-thumb-hover: #a8a8c4;
 
-	/* Legacy --void-* overrides */
-	--void-bg-2-hover: color-mix(in srgb, var(--cortex-surface-2-alt) 80%, #e0e0f0 20%);
-	--void-fg-4:       #9090b0;
-	--void-border-2:   var(--cortex-border-base);
-	--void-border-4:   var(--cortex-border-strong);
+	/* Legacy --void-* overrides
+	 * Must re-declare all --void-* tokens here because CSS custom properties
+	 * resolve their var() references at the declaring element (:root) and the
+	 * computed value is then inherited.  Overriding --cortex-surface-* on
+	 * .monaco-workbench.vs does NOT cause --void-bg-* to re-resolve, so we
+	 * re-declare every --void-* alias below to pick up the light values. */
+	--void-bg-1:         var(--cortex-surface-1);
+	--void-bg-1-alt:     var(--cortex-surface-1-alt);
+	--void-bg-2:         var(--cortex-surface-2);
+	--void-bg-2-alt:     var(--cortex-surface-2-alt);
+	--void-bg-2-hover:   color-mix(in srgb, var(--cortex-surface-2-alt) 80%, #e0e0f0 20%);
+	--void-bg-3:         var(--cortex-surface-3);
+
+	--void-fg-0:         var(--cortex-text-strong);
+	--void-fg-1:         var(--cortex-text-base);
+	--void-fg-2:         var(--cortex-text-muted);
+	--void-fg-3:         var(--cortex-text-subtle);
+	--void-fg-4:         #9090b0;
+
+	--void-border-1:     var(--cortex-border-strong);
+	--void-border-2:     var(--cortex-border-base);
+	--void-border-3:     var(--cortex-border-weak);
+	--void-border-4:     var(--cortex-border-strong);
 
 	/* Inline diff buttons: WCAG AA on light backgrounds */
 	--cortex-accept-bg:      rgb(18, 98, 40);
@@ -648,13 +566,9 @@ body.vscode-light,
 }
 
 /* High-contrast light theme */
-body.vscode-high-contrast-light .void-scope,
-body.vscode-high-contrast-light .cortex-onboarding-root,
-body.vscode-high-contrast-light .monaco-workbench .part.auxiliarybar > .content,
+body.vscode-high-contrast-light :root,
 body.vscode-high-contrast-light,
-.vscode-high-contrast-light .void-scope,
-.vscode-high-contrast-light .cortex-onboarding-root,
-.vscode-high-contrast-light .monaco-workbench .part.auxiliarybar > .content,
+.vscode-high-contrast-light :root,
 .vscode-high-contrast-light {
 	--cortex-surface-0:     #ffffff;
 	--cortex-surface-1:     #f0f0f0;
@@ -678,18 +592,25 @@ body.vscode-high-contrast-light,
 	--cortex-scrollbar-thumb:       #909090;
 	--cortex-scrollbar-thumb-hover: #606060;
 
-	--void-border-2: #b0b0b0;
-	--void-border-4: #888888;
+	--void-bg-1:         var(--cortex-surface-1);
+	--void-bg-1-alt:     var(--cortex-surface-1-alt);
+	--void-bg-2:         var(--cortex-surface-2);
+	--void-bg-2-alt:     var(--cortex-surface-2-alt);
+	--void-bg-3:         var(--cortex-surface-3);
+	--void-fg-0:         var(--cortex-text-strong);
+	--void-fg-1:         var(--cortex-text-base);
+	--void-fg-2:         var(--cortex-text-muted);
+	--void-fg-3:         var(--cortex-text-subtle);
+	--void-border-1:     var(--cortex-border-strong);
+	--void-border-2:     #b0b0b0;
+	--void-border-3:     var(--cortex-border-weak);
+	--void-border-4:     #888888;
 }
 
 /* High-contrast dark theme */
-body.vscode-high-contrast .void-scope,
-body.vscode-high-contrast .cortex-onboarding-root,
-body.vscode-high-contrast .monaco-workbench .part.auxiliarybar > .content,
+body.vscode-high-contrast :root,
 body.vscode-high-contrast,
-.vscode-high-contrast .void-scope,
-.vscode-high-contrast .cortex-onboarding-root,
-.vscode-high-contrast .monaco-workbench .part.auxiliarybar > .content,
+.vscode-high-contrast :root,
 .vscode-high-contrast {
 	--cortex-border-weak:   #444444;
 	--cortex-border-base:   #666666;

@@ -432,7 +432,6 @@ class NewWindowAction extends Action2 {
 				id: MenuId.MenubarFileMenu,
 				group: '1_new',
 				order: 3,
-				when: IsSessionsWindowContext.negate()
 			}
 		});
 	}
@@ -520,5 +519,4 @@ MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
 	submenu: MenuId.MenubarRecentMenu,
 	group: '2_open',
 	order: 4,
-	when: IsSessionsWindowContext.negate()
 });

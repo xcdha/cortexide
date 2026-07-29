@@ -381,6 +381,364 @@ suite('Workbench - MCP - ServerRequestHandler', () => {
 			assert.strictEqual(e.name, 'Canceled');
 		}
 	});
+
+	test('callTool forwards _meta.traceparent to the JSON-RPC payload (MCP SEP-414)', async () => {
+		const traceparent = '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01';
+		const tracestate = 'rojo=00f067aa0ba902b7';
+
+		const callPromise = handler.callTool({
+			name: 'echo',
+			arguments: { hello: 'world' },
+			_meta: { traceparent, tracestate, progressToken: 'tok-1' },
+		});
+
+		const sentMessages = transport.getSentMessages();
+		const callRequest = sentMessages[2] as MCP.JSONRPCRequest & MCP.CallToolRequest;
+		assert.strictEqual(callRequest.method, 'tools/call');
+		assert.deepStrictEqual(callRequest.params._meta, {
+			traceparent,
+			tracestate,
+			progressToken: 'tok-1',
+		});
+
+		transport.simulateReceiveMessage({
+			jsonrpc: MCP.JSONRPC_VERSION,
+			id: callRequest.id,
+			result: { content: [] },
+		});
+
+		await callPromise;
+	});
+});
+
+suite.skip('Workbench - MCP - McpTask', () => { // TODO@connor4312 https://github.com/microsoft/vscode/issues/280126
+	const store = ensureNoDisposablesAreLeakedInTestSuite();
+	let clock: sinon.SinonFakeTimers;
+
+	setup(() => {
+		clock = sinon.useFakeTimers();
+	});
+
+	teardown(() => {
+		clock.restore();
+	});
+
+	function createTask(overrides: Partial<MCP.Task> = {}): MCP.Task {
+		return {
+			taskId: 'task1',
+			status: 'working',
+			createdAt: new Date().toISOString(),
+			lastUpdatedAt: new Date().toISOString(),
+			ttl: null,
+			...overrides
+		};
+	}
+
+	test('should resolve when task completes', async () => {
+		const getTaskResultStub = sinon.stub().resolves({ content: [{ type: 'text', text: 'result' }] });
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: sinon.stub().resolves(createTask({ status: 'completed' })),
+			getTaskResult: getTaskResultStub
+		});
+
+		const task = store.add(new McpTask(createTask()));
+		task.setHandler(mockHandler);
+
+		// Advance time to trigger polling
+		await clock.tickAsync(2000);
+
+		// Update to completed state
+		task.onDidUpdateState(createTask({ status: 'completed' }));
+
+		const result = await task.result;
+		assert.deepStrictEqual(result, { content: [{ type: 'text', text: 'result' }] });
+		assert.ok(getTaskResultStub.calledWith({ taskId: 'task1' }));
+	});
+
+	test('should poll for task updates', async () => {
+		const getTaskStub = sinon.stub();
+		getTaskStub.onCall(0).resolves(createTask({ status: 'working' }));
+		getTaskStub.onCall(1).resolves(createTask({ status: 'working' }));
+		getTaskStub.onCall(2).resolves(createTask({ status: 'completed' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+			getTaskResult: sinon.stub().resolves({ content: [{ type: 'text', text: 'result' }] })
+		});
+
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+		task.setHandler(mockHandler);
+
+		// First poll
+		await clock.tickAsync(1000);
+		assert.strictEqual(getTaskStub.callCount, 1);
+
+		// Second poll
+		await clock.tickAsync(1000);
+		assert.strictEqual(getTaskStub.callCount, 2);
+
+		// Third poll - completes
+		await clock.tickAsync(1000);
+		assert.strictEqual(getTaskStub.callCount, 3);
+
+		const result = await task.result;
+		assert.deepStrictEqual(result, { content: [{ type: 'text', text: 'result' }] });
+	});
+
+	test('should use default poll interval if not specified', async () => {
+		const getTaskStub = sinon.stub();
+		getTaskStub.resolves(createTask({ status: 'working' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+		});
+
+		const task = store.add(new McpTask(createTask()));
+		task.setHandler(mockHandler);
+
+		// Default poll interval is 2000ms
+		await clock.tickAsync(2000);
+		assert.strictEqual(getTaskStub.callCount, 1);
+
+		await clock.tickAsync(2000);
+		assert.strictEqual(getTaskStub.callCount, 2);
+
+		task.dispose();
+	});
+
+	test('should reject when task fails', async () => {
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: sinon.stub().resolves(createTask({
+				status: 'failed',
+				statusMessage: 'Something went wrong'
+			}))
+		});
+
+		const task = store.add(new McpTask(createTask()));
+		task.setHandler(mockHandler);
+
+		// Update to failed state
+		task.onDidUpdateState(createTask({
+			status: 'failed',
+			statusMessage: 'Something went wrong'
+		}));
+
+		await assert.rejects(
+			task.result,
+			(error: Error) => {
+				assert.ok(error.message.includes('Task task1 failed'));
+				assert.ok(error.message.includes('Something went wrong'));
+				return true;
+			}
+		);
+	});
+
+	test('should cancel when task is cancelled', async () => {
+		const task = store.add(new McpTask(createTask()));
+
+		// Update to cancelled state
+		task.onDidUpdateState(createTask({ status: 'cancelled' }));
+
+		await assert.rejects(
+			task.result,
+			(error: Error) => {
+				assert.strictEqual(error.name, 'Canceled');
+				return true;
+			}
+		);
+	});
+
+	test('should cancel when cancellation token is triggered', async () => {
+		const cts = store.add(new CancellationTokenSource());
+		const task = store.add(new McpTask(createTask(), cts.token));
+
+		// Cancel the token
+		cts.cancel();
+
+		await assert.rejects(
+			task.result,
+			(error: Error) => {
+				assert.strictEqual(error.name, 'Canceled');
+				return true;
+			}
+		);
+	});
+
+	test('should handle TTL expiration', async () => {
+		const now = Date.now();
+		clock.setSystemTime(now);
+
+		const task = store.add(new McpTask(createTask({ ttl: 5000 })));
+
+		// Advance time past TTL
+		await clock.tickAsync(6000);
+
+		await assert.rejects(
+			task.result,
+			(error: Error) => {
+				assert.strictEqual(error.name, 'Canceled');
+				return true;
+			}
+		);
+	});
+
+	test('should stop polling when in terminal state', async () => {
+		const getTaskStub = sinon.stub();
+		getTaskStub.resolves(createTask({ status: 'completed' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+			getTaskResult: sinon.stub().resolves({ content: [{ type: 'text', text: 'result' }] })
+		});
+
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+		task.setHandler(mockHandler);
+
+		// Update to completed state immediately
+		task.onDidUpdateState(createTask({ status: 'completed' }));
+
+		await task.result;
+
+		// Advance time - should not poll anymore
+		const initialCallCount = getTaskStub.callCount;
+		await clock.tickAsync(5000);
+		assert.strictEqual(getTaskStub.callCount, initialCallCount);
+	});
+
+	test('should handle handler reconnection', async () => {
+		const getTaskStub1 = sinon.stub();
+		getTaskStub1.resolves(createTask({ status: 'working' }));
+
+		const mockHandler1 = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub1,
+		});
+
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+		task.setHandler(mockHandler1);
+
+		// First poll with handler1
+		await clock.tickAsync(1000);
+		assert.strictEqual(getTaskStub1.callCount, 1);
+
+		// Switch to a new handler
+		const getTaskStub2 = sinon.stub();
+		getTaskStub2.resolves(createTask({ status: 'completed' }));
+
+		const mockHandler2 = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub2,
+			getTaskResult: sinon.stub().resolves({ content: [{ type: 'text', text: 'result' }] })
+		});
+
+		task.setHandler(mockHandler2);
+
+		// Second poll with handler2
+		await clock.tickAsync(1000);
+		assert.strictEqual(getTaskStub1.callCount, 1); // No more calls to old handler
+		assert.strictEqual(getTaskStub2.callCount, 1); // New handler is called
+
+		const result = await task.result;
+		assert.deepStrictEqual(result, { content: [{ type: 'text', text: 'result' }] });
+	});
+
+	test('should not poll when handler is undefined', async () => {
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+
+		// Advance time - should not crash
+		await clock.tickAsync(5000);
+
+		// Now set a handler and it should start polling
+		const getTaskStub = sinon.stub();
+		getTaskStub.resolves(createTask({ status: 'completed' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+			getTaskResult: sinon.stub().resolves({ content: [{ type: 'text', text: 'result' }] })
+		});
+
+		task.setHandler(mockHandler);
+		await clock.tickAsync(1000);
+		assert.strictEqual(getTaskStub.callCount, 1);
+
+		task.dispose();
+	});
+
+	test('should handle input_required state', async () => {
+		const getTaskStub = sinon.stub();
+		// getTask call returns completed (triggered by input_required handling)
+		getTaskStub.resolves(createTask({ status: 'completed' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+			getTaskResult: sinon.stub().resolves({ content: [{ type: 'text', text: 'result' }] })
+		});
+
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+		task.setHandler(mockHandler);
+
+		// Update to input_required - this triggers a getTask call
+		task.onDidUpdateState(createTask({ status: 'input_required' }));
+
+		// Allow the promise to settle
+		await clock.tickAsync(0);
+
+		// Verify getTask was called
+		assert.strictEqual(getTaskStub.callCount, 1);
+
+		// Once getTask resolves with completed, should fetch result
+		const result = await task.result;
+		assert.deepStrictEqual(result, { content: [{ type: 'text', text: 'result' }] });
+	});
+
+	test('should handle getTask returning cancelled during polling', async () => {
+		const getTaskStub = sinon.stub();
+		getTaskStub.resolves(createTask({ status: 'cancelled' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+		});
+
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+		task.setHandler(mockHandler);
+
+		// Advance time to trigger polling
+		await clock.tickAsync(1000);
+
+		await assert.rejects(
+			task.result,
+			(error: Error) => {
+				assert.strictEqual(error.name, 'Canceled');
+				return true;
+			}
+		);
+	});
+
+	test('should return correct task id', () => {
+		const task = store.add(new McpTask(createTask({ taskId: 'my-task-id' })));
+		assert.strictEqual(task.id, 'my-task-id');
+	});
+
+	test('should dispose cleanly', async () => {
+		const getTaskStub = sinon.stub();
+		getTaskStub.resolves(createTask({ status: 'working' }));
+
+		const mockHandler = upcastPartial<McpServerRequestHandler>({
+			getTask: getTaskStub,
+		});
+
+		const task = store.add(new McpTask(createTask({ pollInterval: 1000 })));
+		task.setHandler(mockHandler);
+
+		// Poll once
+		await clock.tickAsync(1000);
+		const callCountBeforeDispose = getTaskStub.callCount;
+
+		// Dispose
+		task.dispose();
+
+		// Advance time - should not poll anymore
+		await clock.tickAsync(5000);
+		assert.strictEqual(getTaskStub.callCount, callCountBeforeDispose);
+	});
 });
 
 suite.skip('Workbench - MCP - McpTask', () => { // TODO@connor4312 https://github.com/microsoft/vscode/issues/280126

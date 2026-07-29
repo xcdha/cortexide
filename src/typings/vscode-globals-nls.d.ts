@@ -34,6 +34,12 @@ declare global {
 	 * Instead of accessing this global variable directly, use function getNLSLanguage.
 	 */
 	var _VSCODE_NLS_LANGUAGE: string | undefined;
+
+	/**
+	 * Whether `node_modules.asar` exists in the app root.
+	 * Only true in production builds; false in development mode.
+	 */
+	var _VSCODE_NODE_MODULES_ASAR_EXISTS: boolean | undefined;
 }
 
 // fake export to make global work

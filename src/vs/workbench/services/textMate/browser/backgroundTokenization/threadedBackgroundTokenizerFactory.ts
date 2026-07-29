@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { canASAR } from '../../../../../amdX.js';
 import { DisposableStore, IDisposable, toDisposable } from '../../../../../base/common/lifecycle.js';
 import { AppResourcePath, FileAccess, nodeModulesAsarPath, nodeModulesPath } from '../../../../../base/common/network.js';
 import { IObservable } from '../../../../../base/common/observable.js';
@@ -133,13 +132,25 @@ export class ThreadedBackgroundTokenizerFactory implements IDisposable {
 		const onigurumaModuleLocation: AppResourcePath = `${nodeModulesPath}/vscode-oniguruma`;
 		const onigurumaModuleLocationAsar: AppResourcePath = `${nodeModulesAsarPath}/vscode-oniguruma`;
 
-		const useAsar = canASAR && this._environmentService.isBuilt && !isWeb;
+		const useAsar = this._environmentService.isBuilt && !isWeb;
 		const onigurumaLocation: AppResourcePath = useAsar ? onigurumaModuleLocationAsar : onigurumaModuleLocation;
 		const onigurumaWASM: AppResourcePath = `${onigurumaLocation}/release/onig.wasm`;
 
+		// FileAccess.asBrowserUri may generate URLs with .. that vscode-file:// protocol rejects.
+		// Construct a valid absolute path URL as fallback.
+		let onigurumaWASMUri = FileAccess.asBrowserUri(onigurumaWASM).toString(true);
+		if (onigurumaWASMUri.includes('..')) {
+			const loc = window.location.href;
+			const match = loc.match(/vscode-file:\/\/vscode-app\/(.*?)\/vs\/code\//);
+			if (match) {
+				const projectRoot = decodeURIComponent(match[1]).replace(/\/out$/, '');
+				onigurumaWASMUri = `vscode-file://vscode-app/${projectRoot}/node_modules/vscode-oniguruma/release/onig.wasm`;
+			}
+		}
+
 		const createData: ICreateData = {
 			grammarDefinitions: this._grammarDefinitions,
-			onigurumaWASMUri: FileAccess.asBrowserUri(onigurumaWASM).toString(true),
+			onigurumaWASMUri,
 		};
 		const worker = this._worker = this._webWorkerService.createWorkerClient<TextMateTokenizationWorker>(
 			new WebWorkerDescriptor({

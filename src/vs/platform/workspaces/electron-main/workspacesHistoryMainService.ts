@@ -108,7 +108,7 @@ export class WorkspacesHistoryMainService extends Disposable implements IWorkspa
 					// Add to recent documents (Windows only, macOS later)
 					// Skip in portable mode to avoid leaving traces on the machine
 					// Skip in the sessions app to avoid polluting the jump list
-					if (isWindows && recent.fileUri.scheme === Schemas.file && !this.environmentMainService.isPortable && !(process as INodeProcess).isEmbeddedApp) {
+					if (isWindows && recent.fileUri.scheme === Schemas.file && !this.environmentMainService.isPortable) {
 						app.addRecentDocument(recent.fileUri.fsPath);
 					}
 				}
@@ -323,11 +323,6 @@ export class WorkspacesHistoryMainService extends Disposable implements IWorkspa
 
 		// Skip in portable mode to avoid leaving traces on the machine
 		if (this.environmentMainService.isPortable) {
-			return;
-		}
-
-		// Skip in the sessions app to avoid polluting the jump list
-		if ((process as INodeProcess).isEmbeddedApp) {
 			return;
 		}
 

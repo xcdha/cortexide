@@ -6,15 +6,15 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'; // Added useRef import just in case it was missed, though likely already present
 import { ProviderName, SettingName, displayInfoOfSettingName, providerNames, CortexideStatefulModelInfo, customSettingNamesOfProvider, RefreshableProviderName, refreshableProviderNames, displayInfoOfProviderName, nonlocalProviderNames, localProviderNames, GlobalSettingName, featureNames, displayInfoOfFeatureName, isProviderNameDisabled, FeatureName, hasDownloadButtonsOnModelsProviderNames, subTextMdOfProviderName } from '../../../../common/cortexideSettingsTypes.js'
 import ErrorBoundary from '../sidebar-tsx/ErrorBoundary.js'
-import { VoidCustomDropdownBox, VoidInputBox2, VoidSimpleInputBox, VoidSwitch } from '../util/inputs.js'
+import { VoidButtonBgDarken, VoidCustomDropdownBox, VoidInputBox2, VoidSimpleInputBox, VoidSwitch } from '../util/inputs.js'
 import { useAccessor, useIsDark, useIsOptedOut, useRefreshModelListener, useRefreshModelState, useSettingsState } from '../util/services.js'
-import { X, RefreshCw, Loader2, Check, Asterisk, Plus } from 'lucide-react'
+import { X, RefreshCw, Loader2, Check, Asterisk, Plus, Settings2, ChevronRight, ChevronDown } from 'lucide-react'
 import { URI } from '../../../../../../../base/common/uri.js'
 import { ModelDropdown } from './ModelDropdown.js'
 import { ChatMarkdownRender } from '../markdown/ChatMarkdownRender.js'
 import { WarningBox } from './WarningBox.js'
 import { os } from '../../../../common/helpers/systemInfo.js'
-import { IconLoading } from '../sidebar-tsx/shared/icons.js'
+import { IconLoading } from '../sidebar-tsx/SidebarChat.js'
 import { ToolApprovalType, toolApprovalTypes } from '../../../../common/toolsServiceTypes.js'
 import Severity from '../../../../../../../base/common/severity.js'
 import { getModelCapabilities, modelOverrideKeys, ModelOverrides } from '../../../../common/modelCapabilities.js';
@@ -25,6 +25,7 @@ import { OPT_OUT_KEY } from '../../../../common/storageKeys.js';
 import { StorageScope, StorageTarget } from '../../../../../../../platform/storage/common/storage.js';
 import { generateUuid } from '../../../../../../../base/common/uuid.js'
 import { useTranslation } from '../util/useTranslation.js'
+import { TranslationKey } from '../../../../common/i18n/i18nService.js'
 import { useRulesState } from '../util/services.js'
 import { ProjectRule } from '../../../../common/cortexideRulesService.js'
 import { VSBuffer } from '../../../../../../../base/common/buffer.js'
@@ -51,7 +52,7 @@ const ButtonLeftTextRightOption = ({ text, leftButton }: { text: string, leftBut
 
 // models
 const RefreshModelButton = ({ providerName }: { providerName: RefreshableProviderName }) => {
-
+	const { t } = useTranslation()
 	const refreshModelState = useRefreshModelState()
 
 	const accessor = useAccessor()
@@ -94,9 +95,9 @@ const RefreshModelButton = ({ providerName }: { providerName: RefreshableProvide
 			</button>
 		}
 
-		text={justFinished === 'finished' ? `${providerTitle} Models are up-to-date!`
-			: justFinished === 'error' ? `${providerTitle} not found!`
-				: `Manually refresh ${providerTitle} models.`}
+		text={justFinished === 'finished' ? t('settings.modelsUpToDate').replace('{0}', providerTitle)
+			: justFinished === 'error' ? t('settings.providerNotFound').replace('{0}', providerTitle)
+				: t('settings.manualRefresh').replace('{0}', providerTitle)}
 	/>
 }
 
@@ -117,6 +118,7 @@ const RefreshableModels = () => {
 
 // Refresh button for remote provider catalogs
 const RefreshRemoteCatalogButton = ({ providerName }: { providerName: ProviderName }) => {
+	const { t } = useTranslation()
 	const accessor = useAccessor()
 	const refreshModelService = accessor.get('IRefreshModelService')
 	const metricsService = accessor.get('IMetricsService')
@@ -162,10 +164,10 @@ const RefreshRemoteCatalogButton = ({ providerName }: { providerName: ProviderNa
 		}
 		text={justFinished === 'finished'
 			? (foundCount && foundCount > 0
-				? `${providerTitle}: found ${foundCount} model${foundCount === 1 ? '' : 's'} online`
-				: `${providerTitle}: no online catalog — using the built-in list`)
-			: justFinished === 'error' ? `Failed to refresh ${providerTitle} catalog`
-				: `Refresh ${providerTitle} model catalog`}
+				? t('settings.foundOnline').replace('{0}', providerTitle).replace('{1}', String(foundCount)).replace('{2}', foundCount === 1 ? '' : 's')
+				: t('settings.noOnlineCatalog').replace('{0}', providerTitle))
+			: justFinished === 'error' ? t('settings.refreshCatalogFailed').replace('{0}', providerTitle)
+				: t('settings.refreshModelCatalog').replace('{0}', providerTitle)}
 	/>
 }
 
@@ -238,9 +240,8 @@ export const AnimatedCheckmarkButton = ({ text, className }: { text?: string, cl
 const AddButton = ({ disabled, text = 'Add', ...props }: { disabled?: boolean, text?: React.ReactNode } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
 
 	return <button
-		type="button"
 		disabled={disabled}
-		className={`btn btn-sm btn-primary`}
+		className={`bg-[var(--cortex-brand)] px-3 py-1 text-white rounded-sm ${!disabled ? 'hover:bg-[var(--cortex-brand-dim)] cursor-pointer' : 'opacity-50 cursor-not-allowed bg-opacity-70'}`}
 		{...props}
 	>{text}</button>
 
@@ -248,6 +249,7 @@ const AddButton = ({ disabled, text = 'Add', ...props }: { disabled?: boolean, t
 
 // ConfirmButton prompts for a second click to confirm an action, cancels if clicking outside
 const ConfirmButton = ({ children, onConfirm, className }: { children: React.ReactNode, onConfirm: () => void, className?: string }) => {
+	const { t } = useTranslation()
 	const [confirm, setConfirm] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 	useEffect(() => {
@@ -262,7 +264,7 @@ const ConfirmButton = ({ children, onConfirm, className }: { children: React.Rea
 	}, [confirm]);
 	return (
 		<div ref={ref} className={`inline-block`}>
-			<button type="button" className={`btn btn-secondary btn-sm ${className ?? ''}`.trim()} onClick={() => {
+			<VoidButtonBgDarken className={className} onClick={() => {
 				if (!confirm) {
 					setConfirm(true);
 				} else {
@@ -270,8 +272,8 @@ const ConfirmButton = ({ children, onConfirm, className }: { children: React.Rea
 					setConfirm(false);
 				}
 			}}>
-				{confirm ? `Confirm Reset` : children}
-			</button>
+				{confirm ? t('settings.confirmReset') : children}
+			</VoidButtonBgDarken>
 		</div>
 	);
 };
@@ -298,6 +300,7 @@ const SimpleModelSettingsDialog = ({
 	const accessor = useAccessor()
 	const settingsState = useSettingsState()
 	const mouseDownInsideModal = useRef(false); // Ref to track mousedown origin
+	const { t } = useTranslation()
 	const settingsStateService = accessor.get('ICortexideSettingsService')
 
 	// current overrides and defaults
@@ -340,11 +343,11 @@ const SimpleModelSettingsDialog = ({
 			try {
 				parsedInput = JSON.parse(textAreaRef.current.value);
 			} catch (e) {
-				setErrorMsg('Invalid JSON');
+				setErrorMsg(t('settings.invalidJson'));
 				return;
 			}
 		} else {
-			setErrorMsg('Invalid JSON');
+			setErrorMsg(t('settings.invalidJson'));
 			return;
 		}
 
@@ -387,7 +390,7 @@ const SimpleModelSettingsDialog = ({
 			>
 				<div className="flex justify-between items-center mb-4">
 					<h3 className="text-lg font-medium">
-						Change Defaults for {modelName} ({displayInfoOfProviderName(providerName).title})
+						{t('settings.changeDefaultsFor').replace('{0}', modelName).replace('{1}', displayInfoOfProviderName(providerName).title)}
 					</h3>
 					<button
 						onClick={onClose}
@@ -399,22 +402,22 @@ const SimpleModelSettingsDialog = ({
 
 				{/* Display model recognition status */}
 				<div className="text-sm text-void-fg-3 mb-4">
-					{type === 'default' ? `${modelName} comes packaged with CortexIDE, so you shouldn't need to change these settings.`
+					{type === 'default' ? t('settings.modelPackaged').replace('{0}', modelName)
 						: isUnrecognizedModel
-						? `Model not recognized by CortexIDE.`
-						: `CortexIDE recognizes ${modelName} ("${recognizedModelName}").`}
+						? t('settings.modelNotFound')
+						: t('settings.modelRecognized').replace('{0}', modelName).replace('{1}', recognizedModelName)}
 				</div>
 
 
 				{/* override toggle */}
 				<div className="flex items-center gap-2 mb-4">
 					<VoidSwitch size='xs' value={overrideEnabled} onChange={setOverrideEnabled} />
-					<span className="text-void-fg-3 text-sm">Override model defaults</span>
+					<span className="text-void-fg-3 text-sm">{t('settings.overrideDefaults')}</span>
 				</div>
 
 				{/* Informational link */}
 				{overrideEnabled && <div className="text-sm text-void-fg-3 mb-4">
-					<ChatMarkdownRender string={`See the [sourcecode](${sourcecodeOverridesLink}) for a reference on how to set this JSON (advanced).`} chatMessageLocation={undefined} />
+					<ChatMarkdownRender string={t('settings.jsonAdvancedDesc').replace('{0}', sourcecodeOverridesLink)} chatMessageLocation={undefined} />
 				</div>}
 
 				<textarea
@@ -431,12 +434,15 @@ const SimpleModelSettingsDialog = ({
 
 
 				<div className="flex justify-end gap-2 mt-4">
-					<button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
-						Cancel
-					</button>
-					<button type="button" onClick={onSave} className="btn btn-primary btn-sm">
-						Save
-					</button>
+					<VoidButtonBgDarken onClick={onClose} className="px-3 py-1">
+						{t('settings.cancel')}
+					</VoidButtonBgDarken>
+					<VoidButtonBgDarken
+						onClick={onSave}
+						className="px-3 py-1 bg-[var(--cortex-brand)] hover:bg-[var(--cortex-brand-dim)] text-white"
+					>
+						{t('settings.save')}
+					</VoidButtonBgDarken>
 				</div>
 			</div>
 		</div>
@@ -450,6 +456,7 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 	const accessor = useAccessor()
 	const settingsStateService = accessor.get('ICortexideSettingsService')
 	const settingsState = useSettingsState()
+	const { t } = useTranslation()
 
 	// State to track which model's settings dialog is open
 	const [openSettingsModel, setOpenSettingsModel] = useState<{
@@ -462,175 +469,190 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 	const [isAddModelOpen, setIsAddModelOpen] = useState(false);
 	const [showCheckmark, setShowCheckmark] = useState(false);
 	const [userChosenProviderName, setUserChosenProviderName] = useState<ProviderName | null>(null);
+	const [userChosenConnectionId, setUserChosenConnectionId] = useState<string | null>(null);
 	const [modelName, setModelName] = useState<string>('');
 	const [errorString, setErrorString] = useState('');
-
-	// a dump of all the enabled providers' models
-	const modelDump: (CortexideStatefulModelInfo & { providerName: ProviderName, providerEnabled: boolean })[] = []
 
 	// Use either filtered providers or all providers
 	const providersToShow = filteredProviders || providerNames;
 
-	for (let providerName of providersToShow) {
-		const providerSettings = settingsState.settingsOfProvider[providerName]
-		// if (!providerSettings.enabled) continue
-		modelDump.push(...providerSettings.models.map(model => ({ ...model, providerName, providerEnabled: !!providerSettings._didFillInProviderSettings })))
+	// Collapse state: start with all providers collapsed, but auto-expand ones that have custom models
+	const [collapsedProviders, setCollapsedProviders] = useState<Set<ProviderName>>(() => {
+		const initial = new Set<ProviderName>(providersToShow)
+		for (const pn of providersToShow) {
+			const hasCustom = settingsState.settingsOfProvider[pn].models.some(m => m.type === 'custom')
+			if (hasCustom) initial.delete(pn)
+		}
+		return initial
+	})
+
+	const toggleProvider = (pn: ProviderName) => {
+		setCollapsedProviders(prev => {
+			const next = new Set(prev)
+			if (next.has(pn)) next.delete(pn)
+			else next.add(pn)
+			return next
+		})
 	}
 
-	// sort by hidden
-	modelDump.sort((a, b) => {
-		return Number(b.providerEnabled) - Number(a.providerEnabled)
+	// Group models by provider for collapsible rendering
+	const groupedModels = providersToShow.map(providerName => {
+		const providerSettings = settingsState.settingsOfProvider[providerName]
+		const models = providerSettings.models.map(model => ({
+			...model,
+			providerName,
+			providerEnabled: !!providerSettings._didFillInProviderSettings,
+		}))
+		return { providerName, models, providerEnabled: !!providerSettings._didFillInProviderSettings }
 	})
 
 	// Add model handler
 	const handleAddModel = () => {
 		if (!userChosenProviderName) {
-			setErrorString('Please select a provider.');
+			setErrorString(t('settings.selectProvider'));
 			return;
 		}
 		if (!modelName) {
-			setErrorString('Please enter a model name.');
+			setErrorString(t('settings.enterModelName'));
 			return;
 		}
 
 		// Check if model already exists
 		if (settingsState.settingsOfProvider[userChosenProviderName].models.find(m => m.modelName === modelName)) {
-			setErrorString(`This model already exists.`);
+			setErrorString(t('settings.thisModelExists'));
 			return;
 		}
 
-		settingsStateService.addModel(userChosenProviderName, modelName);
+		settingsStateService.addModel(userChosenProviderName, modelName, userChosenConnectionId || undefined);
 		setShowCheckmark(true);
 		setTimeout(() => {
 			setShowCheckmark(false);
 			setIsAddModelOpen(false);
 			setUserChosenProviderName(null);
+			setUserChosenConnectionId(null);
 			setModelName('');
 		}, 1500);
 		setErrorString('');
 	};
 
 	return <div className=''>
-		{modelDump.map((m, i) => {
-			const { isHidden, type, modelName, providerName, providerEnabled } = m
-
-			const isNewProviderName = (i > 0 ? modelDump[i - 1] : undefined)?.providerName !== providerName
-
+		{groupedModels.map(({ providerName, models, providerEnabled }) => {
 			const providerTitle = displayInfoOfProviderName(providerName).title
+			const isCollapsed = collapsedProviders.has(providerName)
+			const connectionName = (connId?: string) => {
+				if (!connId || providerName !== 'openAICompatible') return ''
+				const conn = (settingsState.settingsOfProvider.openAICompatible as any).connections?.find((c: any) => c.id === connId)
+				return conn ? `[${conn.name}] ` : ''
+			}
 
-			const disabled = !providerEnabled
-			const value = disabled ? false : !isHidden
-
-			const tooltipName = (
-				disabled ? `Add ${providerTitle} to enable`
-					: value === true ? 'Show in Dropdown'
-						: 'Hide from Dropdown'
-			)
-
-
-			const detailAboutModel = type === 'autodetected' ?
-				<Asterisk size={14} className="inline-block align-text-top brightness-115 stroke-[2] text-[var(--cortex-brand)]" data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content='Detected locally' />
-				: type === 'custom' ?
-					<Asterisk size={14} className="inline-block align-text-top brightness-115 stroke-[2] text-[var(--cortex-brand)]" data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content='Custom model' />
-					: undefined
-
-			const hasOverrides = !!settingsState.overridesOfModel?.[providerName]?.[modelName]
-
-			return <div key={`${modelName}${providerName}`}
-				className={`flex items-center justify-between gap-4 hover:bg-black/10 dark:hover:bg-gray-300/10 py-1 px-3 rounded-sm overflow-hidden cursor-default truncate group
-				`}
-			>
-				{/* left part is width:full */}
-				<div className={`flex flex-grow items-center gap-4`}>
-					<span className='w-full max-w-32'>{isNewProviderName ? providerTitle : ''}</span>
-					<span className='w-fit max-w-[400px] truncate'>{modelName}</span>
+			return <div key={providerName} className="mb-1">
+				<div
+					className="flex items-center gap-2 py-1.5 px-3 cursor-pointer hover:bg-black/10 dark:hover:bg-gray-300/10 rounded-sm"
+					onClick={() => toggleProvider(providerName)}
+				>
+					{isCollapsed
+						? <ChevronRight size={14} className="text-void-fg-3" />
+						: <ChevronDown size={14} className="text-void-fg-3" />}
+					<span className="text-void-fg-2 text-sm font-medium flex-grow">{providerTitle}</span>
+					<span className="text-void-fg-4 text-xs">{models.length}</span>
 				</div>
 
-				{/* right part is anything that fits */}
-				<div className="flex items-center gap-2 w-fit">
+				{!isCollapsed && models.map((m) => {
+					const { isHidden, type, modelName, providerEnabled: pEnabled } = m
+					const disabled = !pEnabled
+					const value = disabled ? false : !isHidden
+					const tooltipName = disabled ? t('settings.addTooltip').replace('{0}', providerTitle)
+						: value ? t('settings.showInDropdown')
+							: t('settings.hideFromDropdown')
+					const detailAboutModel = type === 'autodetected'
+						? <Asterisk size={14} className="inline-block align-text-top brightness-115 stroke-[2] text-[var(--cortex-brand)]" data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content={t('settings.detectedLocally')} />
+						: type === 'custom'
+							? <Asterisk size={14} className="inline-block align-text-top brightness-115 stroke-[2] text-[var(--cortex-brand)]" data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content={t('settings.customModel')} />
+							: undefined
+					const hasOverrides = !!settingsState.overridesOfModel?.[providerName]?.[modelName]
 
-					{/* Advanced Settings button (gear). Hide entirely when provider/model disabled. */}
-					{disabled ? null : (
-						<div className="w-5 flex items-center justify-center">
-							<button
-								type="button"
-								onClick={() => { setOpenSettingsModel({ modelName, providerName, type }) }}
-								data-tooltip-id='cortex-tooltip'
-								data-tooltip-place='right'
-								data-tooltip-content='Advanced Settings'
-								aria-label='Advanced settings'
-								className={`btn btn-icon btn-ghost ${hasOverrides ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
-							>
-								<Plus size={12} className="text-void-fg-3 opacity-50" />
-							</button>
+					return <div key={`${modelName}${providerName}`}
+						className={`flex items-center justify-between gap-4 hover:bg-black/10 dark:hover:bg-gray-300/10 py-1 px-3 pl-8 rounded-sm overflow-hidden cursor-default truncate group`}
+					>
+						<div className={`flex flex-grow items-center gap-4`}>
+							<span className='w-fit max-w-[400px] truncate'>
+								{connectionName(m.connectionId)}{modelName}
+							</span>
 						</div>
-					)}
-
-					{/* Blue star */}
-					{detailAboutModel}
-
-
-					{/* Switch */}
-					<VoidSwitch
-						value={value}
-						onChange={() => { settingsStateService.toggleModelHidden(providerName, modelName); }}
-						disabled={disabled}
-						size='sm'
-
-						data-tooltip-id='cortex-tooltip'
-						data-tooltip-place='right'
-						data-tooltip-content={tooltipName}
-					/>
-
-					{/* X button */}
-					<div className={`w-5 flex items-center justify-center`}>
-						{type === 'default' || type === 'autodetected' ? null : <button
-							type="button"
-							onClick={() => { settingsStateService.deleteModel(providerName, modelName); }}
-							data-tooltip-id='cortex-tooltip'
-							data-tooltip-place='right'
-							data-tooltip-content='Delete'
-							aria-label='Delete model'
-							className={`btn btn-icon btn-ghost ${hasOverrides ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
-						>
-							<X size={12} className="text-void-fg-3 opacity-50" />
-						</button>}
+						<div className="flex items-center gap-2 w-fit">
+							{disabled ? null : (
+								<div className="w-5 flex items-center justify-center">
+									<button onClick={() => { setOpenSettingsModel({ modelName, providerName, type }) }} data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content={t('settings.advancedSettings')} className={`${hasOverrides ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+										<Plus size={12} className="text-void-fg-3 opacity-50" />
+									</button>
+								</div>
+							)}
+							{detailAboutModel}
+							<VoidSwitch value={value} onChange={() => { settingsStateService.toggleModelHidden(providerName, modelName) }} disabled={disabled} size='sm' data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content={tooltipName} />
+							<div className={`w-5 flex items-center justify-center`}>
+								{type === 'default' || type === 'autodetected' ? null : <button onClick={() => { settingsStateService.deleteModel(providerName, modelName) }} data-tooltip-id='cortex-tooltip' data-tooltip-place='right' data-tooltip-content={t('settings.delete')} className={`${hasOverrides ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+									<X size={12} className="text-void-fg-3 opacity-50" />
+								</button>}
+							</div>
+						</div>
 					</div>
-				</div>
+				})}
 			</div>
 		})}
 
 		{/* Add Model Section */}
 		{showCheckmark ? (
 			<div className="mt-4">
-				<AnimatedCheckmarkButton text='Added' className="btn btn-sm btn-primary" />
+				<AnimatedCheckmarkButton text={t('settings.added')} className="bg-[var(--cortex-brand)] text-white px-3 py-1 rounded-sm" />
 			</div>
 		) : isAddModelOpen ? (
 			<div className="mt-4">
-				<form className="flex flex-wrap items-center gap-2 min-w-0">
+				<form className="flex items-center gap-2">
 
 					{/* Provider dropdown */}
+				<ErrorBoundary>
+					<VoidCustomDropdownBox
+						options={providersToShow}
+						selectedOption={userChosenProviderName}
+						onChangeOption={(pn) => setUserChosenProviderName(pn)}
+						getOptionDisplayName={(pn) => pn ? displayInfoOfProviderName(pn).title : t('settings.providerName')}
+						getOptionDropdownName={(pn) => pn ? displayInfoOfProviderName(pn).title : t('settings.providerName')}
+						getOptionsEqual={(a, b) => a === b}
+						className="max-w-32 mx-2 w-full resize-none bg-void-bg-1 text-void-fg-1 placeholder:text-void-fg-3 border border-void-border-2 focus:border-void-border-1 py-1 px-2 rounded"
+						arrowTouchesText={false}
+					/>
+				</ErrorBoundary>
+
+				{/* Connection dropdown (only for openAICompatible with connections) */}
+				{userChosenProviderName === 'openAICompatible' && ((settingsState.settingsOfProvider.openAICompatible as any).connections || []).length > 0 && (
 					<ErrorBoundary>
 						<VoidCustomDropdownBox
-							options={providersToShow}
-							selectedOption={userChosenProviderName}
-							onChangeOption={(pn) => setUserChosenProviderName(pn)}
-							getOptionDisplayName={(pn) => pn ? displayInfoOfProviderName(pn).title : 'Provider Name'}
-							getOptionDropdownName={(pn) => pn ? displayInfoOfProviderName(pn).title : 'Provider Name'}
-							getOptionsEqual={(a, b) => a === b}
-							className="shrink-0 max-w-[140px] w-full resize-none bg-void-bg-1 text-void-fg-1 placeholder:text-void-fg-3 border border-void-border-2 focus:border-void-border-1 py-1 px-2 rounded"
+							options={((settingsState.settingsOfProvider.openAICompatible as any).connections || []).map((c: any) => c.id)}
+							selectedOption={userChosenConnectionId}
+							onChangeOption={(id: string) => setUserChosenConnectionId(id)}
+							getOptionDisplayName={(id: string) => {
+								const conn = ((settingsState.settingsOfProvider.openAICompatible as any).connections || []).find((c: any) => c.id === id)
+								return conn ? conn.name : ''
+							}}
+							getOptionDropdownName={(id: string) => {
+								const conn = ((settingsState.settingsOfProvider.openAICompatible as any).connections || []).find((c: any) => c.id === id)
+								return conn ? conn.name : t('settings.connection')
+							}}
+							getOptionsEqual={(a: string, b: string) => a === b}
+							className="max-w-32 mx-2 w-full resize-none bg-void-bg-1 text-void-fg-1 placeholder:text-void-fg-3 border border-void-border-2 focus:border-void-border-1 py-1 px-2 rounded"
 							arrowTouchesText={false}
 						/>
 					</ErrorBoundary>
+				)}
 
-					{/* Model name input — flex so long gguf names wrap instead of horizontal scroll (onboarding #67) */}
+				{/* Model name input */}
 					<ErrorBoundary>
 						<VoidSimpleInputBox
 							value={modelName}
 							compact={true}
 							onChangeValue={setModelName}
-							placeholder='Model Name'
-							className='min-w-0 flex-1 basis-40'
+							placeholder={t('settings.modelName')}
+							className='max-w-32'
 						/>
 					</ErrorBoundary>
 
@@ -638,25 +660,26 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 					<ErrorBoundary>
 						<AddButton
 							type='button'
+							text={t('common.add')}
 							disabled={!modelName || !userChosenProviderName}
 							onClick={handleAddModel}
 						/>
 					</ErrorBoundary>
 
 					{/* X button to cancel */}
-					<button
-						type="button"
-						onClick={() => {
-							setIsAddModelOpen(false);
-							setErrorString('');
-							setModelName('');
-							setUserChosenProviderName(null);
-						}}
-						aria-label='Cancel add model'
-						className='btn btn-icon btn-ghost text-void-fg-4'
-					>
-						<X className='size-4' />
-					</button>
+				<button
+					type="button"
+					onClick={() => {
+						setIsAddModelOpen(false);
+						setErrorString('');
+						setModelName('');
+						setUserChosenProviderName(null);
+						setUserChosenConnectionId(null);
+					}}
+					className='text-void-fg-4'
+				>
+					<X className='size-4' />
+				</button>
 				</form>
 
 				{errorString && (
@@ -672,7 +695,7 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 			>
 				<div className="flex items-center gap-1">
 					<Plus size={16} />
-					<span>Add a model</span>
+					<span>{t('settings.addAModel')}</span>
 				</div>
 			</div>
 		)}
@@ -687,12 +710,106 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 }
 
 
+// OpenAI-Compatible connection manager (CRUD UI for named connections)
+const OpenAICompatibleConnectionManager = () => {
+	const { t } = useTranslation()
+	const accessor = useAccessor()
+	const settingsStateService = accessor.get('ICortexideSettingsService')
+	const settingsState = useSettingsState()
+
+	const [isAdding, setIsAdding] = useState(false)
+	const [editingId, setEditingId] = useState<string | null>(null)
+	const [formName, setFormName] = useState('')
+	const [formEndpoint, setFormEndpoint] = useState('')
+	const [formApiKey, setFormApiKey] = useState('')
+	const [formHeaders, setFormHeaders] = useState('{}')
+
+	const connections = (settingsState.settingsOfProvider.openAICompatible as any).connections || []
+
+	const handleSave = () => {
+		if (!formName || !formEndpoint) return
+		if (editingId) {
+			settingsStateService.updateOpenAICompatibleConnection(editingId, formName, formEndpoint, formApiKey, formHeaders)
+		} else {
+			settingsStateService.addOpenAICompatibleConnection(formName, formEndpoint, formApiKey, formHeaders)
+		}
+		setIsAdding(false)
+		setEditingId(null)
+		setFormName(''); setFormEndpoint(''); setFormApiKey(''); setFormHeaders('{}')
+	}
+
+	const handleEdit = (conn: any) => {
+		setEditingId(conn.id)
+		setFormName(conn.name); setFormEndpoint(conn.endpoint); setFormApiKey(conn.apiKey); setFormHeaders(conn.headersJSON)
+		setIsAdding(true)
+	}
+
+	const handleDelete = (id: string) => {
+		settingsStateService.deleteOpenAICompatibleConnection(id)
+	}
+
+	return <div className="mt-2 mb-4">
+		{connections.map((conn: any) => (
+			<div key={conn.id} className="flex items-center justify-between gap-2 py-1 px-3 rounded-sm hover:bg-black/10 dark:hover:bg-gray-300/10">
+				<div className="flex flex-col flex-grow">
+					<span className="text-void-fg-1 text-sm font-medium">{conn.name}</span>
+					<span className="text-void-fg-3 text-xs truncate">{conn.endpoint}</span>
+				</div>
+				<div className="flex items-center gap-1">
+					<button onClick={() => handleEdit(conn)} className="text-void-fg-3 hover:text-void-fg-1 p-1">
+						<Settings2 size={12} />
+					</button>
+					<button onClick={() => handleDelete(conn.id)} className="text-void-fg-3 hover:text-red-500 p-1">
+						<X size={12} />
+					</button>
+				</div>
+			</div>
+		))}
+
+		{isAdding ? (
+			<div className="mt-2 p-3 rounded-sm bg-void-bg-1 border border-void-border-2 flex flex-col gap-2">
+				<input value={formName} onChange={e => setFormName(e.target.value)} placeholder={t('settings.connectionName')} className="bg-void-bg-2 text-void-fg-1 border border-void-border-2 rounded px-2 py-1 text-sm w-full" />
+				<input value={formEndpoint} onChange={e => setFormEndpoint(e.target.value)} placeholder="https://..." className="bg-void-bg-2 text-void-fg-1 border border-void-border-2 rounded px-2 py-1 text-sm w-full" />
+				<input value={formApiKey} onChange={e => setFormApiKey(e.target.value)} placeholder={t('settings.apiKey')} type="password" className="bg-void-bg-2 text-void-fg-1 border border-void-border-2 rounded px-2 py-1 text-sm w-full" />
+				<input value={formHeaders} onChange={e => setFormHeaders(e.target.value)} placeholder='{}' className="bg-void-bg-2 text-void-fg-1 border border-void-border-2 rounded px-2 py-1 text-sm w-full" />
+				<div className="flex gap-2">
+					<button onClick={handleSave} className="bg-[var(--cortex-brand)] text-white px-3 py-1 rounded text-sm">{editingId ? t('settings.save') : t('common.add')}</button>
+					<button onClick={() => { setIsAdding(false); setEditingId(null) }} className="text-void-fg-3 px-3 py-1 text-sm">{t('settings.cancel')}</button>
+				</div>
+			</div>
+		) : (
+			<div className="text-void-fg-4 flex items-center gap-1 cursor-pointer mt-2" onClick={() => setIsAdding(true)}>
+				<Plus size={16} />
+				<span className="text-sm">{t('settings.addConnection')}</span>
+			</div>
+		)}
+	</div>
+}
+
 
 // providers
 
 const ProviderSetting = ({ providerName, settingName, subTextMd }: { providerName: ProviderName, settingName: SettingName, subTextMd: React.ReactNode }) => {
 
-	const { title: settingTitle, placeholder, isPasswordField } = displayInfoOfSettingName(providerName, settingName)
+	const { t } = useTranslation()
+	const { placeholder, isPasswordField } = displayInfoOfSettingName(providerName, settingName)
+	const settingTitle = (() => {
+		if (settingName === 'apiKey') return t('settings.settingTitle.apiKey')
+		if (settingName === 'endpoint') {
+			// endpoint title can be 'Endpoint' or 'baseURL' depending on provider
+			const rawTitle = displayInfoOfSettingName(providerName, settingName).title
+			return rawTitle === 'baseURL' ? t('settings.settingTitle.baseURL') : t('settings.settingTitle.endpoint')
+		}
+		if (settingName === 'headersJSON') return t('settings.settingTitle.customHeaders')
+		if (settingName === 'region') return t('settings.settingTitle.region')
+		if (settingName === 'azureApiVersion') return t('settings.settingTitle.apiVersion')
+		if (settingName === 'project') {
+			// project title can be 'Resource' or 'Project' depending on provider
+			const rawTitle = displayInfoOfSettingName(providerName, settingName).title
+			return rawTitle === 'Resource' ? t('settings.settingTitle.resource') : t('settings.settingTitle.project')
+		}
+		return displayInfoOfSettingName(providerName, settingName).title
+	})()
 
 	const accessor = useAccessor()
 	const cortexideSettingsService = accessor.get('ICortexideSettingsService')
@@ -772,6 +889,7 @@ const ProviderSetting = ({ providerName, settingName, subTextMd }: { providerNam
 
 
 export const SettingsForProvider = ({ providerName, showProviderTitle, showProviderSuggestions }: { providerName: ProviderName, showProviderTitle: boolean, showProviderSuggestions: boolean }) => {
+	const { t } = useTranslation()
 	const voidSettingsState = useSettingsState()
 
 	const needsModel = isProviderNameDisabled(providerName, voidSettingsState) === 'addModel'
@@ -803,21 +921,23 @@ export const SettingsForProvider = ({ providerName, showProviderTitle, showProvi
 
 		<div className='px-0'>
 			{/* settings besides models (e.g. api key) */}
-			{settingNames.map((settingName, i) => {
+			{settingNames.filter(sn => sn !== 'connections').map((settingName, i) => {
 
 				return <ProviderSetting
 					key={settingName}
 					providerName={providerName}
 					settingName={settingName}
-					subTextMd={i !== settingNames.length - 1 ? null
-						: <ChatMarkdownRender string={subTextMdOfProviderName(providerName)} chatMessageLocation={undefined} />}
+					subTextMd={i !== settingNames.filter(sn => sn !== 'connections').length - 1 ? null
+						: <ChatMarkdownRender string={t(('settings.providerDesc.' + providerName) as TranslationKey)} chatMessageLocation={undefined} />}
 				/>
 			})}
 
+			{providerName === 'openAICompatible' && <OpenAICompatibleConnectionManager />}
+
 			{showProviderSuggestions && needsModel ?
 				providerName === 'ollama' ?
-					<WarningBox className="pl-2 mb-4" text={`Please install an Ollama model. We'll auto-detect it.`} />
-					: <WarningBox className="pl-2 mb-4" text={`Please add a model for ${providerTitle} (Models section).`} />
+					<WarningBox className="pl-2 mb-4" text={t('settings.installOllamaModel')} />
+					: <WarningBox className="pl-2 mb-4" text={t('settings.addModelFor').replace('{0}', providerTitle)} />
 				: null}
 		</div>
 	</div >
@@ -834,7 +954,24 @@ export const VoidProviderSettings = ({ providerNames }: { providerNames: Provide
 
 
 type TabName = 'models' | 'general'
+
+const LanguageSelector = () => {
+	const { t, locale, setLocale, supportedLocales } = useTranslation()
+	return <div className='my-2'>
+		<select
+			className='text-sm bg-void-bg-1 text-void-fg-1 border border-void-border-1 rounded px-2 py-1'
+			value={locale}
+			onChange={(e) => setLocale(e.target.value as any)}
+		>
+			{Object.entries(supportedLocales).map(([code, name]) => (
+				<option key={code} value={code}>{name}</option>
+			))}
+		</select>
+	</div>
+}
+
 export const AutoDetectLocalModelsToggle = () => {
+	const { t } = useTranslation()
 	const settingName: GlobalSettingName = 'autoRefreshModels'
 
 	const accessor = useAccessor()
@@ -855,7 +992,7 @@ export const AutoDetectLocalModelsToggle = () => {
 				metricsService.capture('Click', { action: 'Autorefresh Toggle', settingName, enabled: newVal })
 			}}
 		/>}
-		text={`Automatically detect local providers and models (${refreshableProviderNames.map(providerName => displayInfoOfProviderName(providerName).title).join(', ')}).`}
+		text={t('settings.autoDetectLocal').replace('{0}', refreshableProviderNames.map(providerName => displayInfoOfProviderName(providerName).title).join(', '))}
 	/>
 
 
@@ -865,10 +1002,11 @@ export const AIInstructionsBox = () => {
 	const accessor = useAccessor()
 	const cortexideSettingsService = accessor.get('ICortexideSettingsService')
 	const voidSettingsState = useSettingsState()
+	const { t } = useTranslation()
 	return <VoidInputBox2
 		className='min-h-[81px] p-3 rounded-sm'
 		initValue={voidSettingsState.globalSettings.aiInstructions}
-		placeholder={`Do not change my indentation or delete my comments. When writing TS or JS, do not add ;'s. Write new code using Rust if possible. `}
+		placeholder={t('settings.aiInstructionsPlaceholder')}
 		multiline
 		onChangeText={(newText) => {
 			cortexideSettingsService.setGlobalSetting('aiInstructions', newText)
@@ -888,7 +1026,7 @@ const ProjectRulesSection = () => {
 	const openRulesDir = useCallback(async () => {
 		const folders = workspaceService.getWorkspace().folders
 		if (!folders.length) {
-			notificationService.warn('No workspace folder open.')
+			notificationService.warn(t('settings.noWorkspace'))
 			return
 		}
 		const rulesDirUri = folders[0].uri.with({ path: folders[0].uri.path + '/.cortexide/rules' })
@@ -900,7 +1038,7 @@ const ProjectRulesSection = () => {
 	const createRuleFile = useCallback(async () => {
 		const folders = workspaceService.getWorkspace().folders
 		if (!folders.length) {
-			notificationService.warn('No workspace folder open.')
+			notificationService.warn(t('settings.noWorkspace'))
 			return
 		}
 		const rulesDirUri = folders[0].uri.with({ path: folders[0].uri.path + '/.cortexide/rules' })
@@ -918,12 +1056,12 @@ const ProjectRulesSection = () => {
 				{t('rules.description')}
 			</h4>
 			<div className='flex gap-2 mb-4'>
-				<button type="button" className="btn btn-secondary btn-sm px-4 py-1" onClick={openRulesDir}>
+				<VoidButtonBgDarken className='px-4 py-1' onClick={openRulesDir}>
 					{t('rules.openRulesDir')}
-				</button>
-				<button type="button" className="btn btn-secondary btn-sm px-4 py-1" onClick={createRuleFile}>
+				</VoidButtonBgDarken>
+				<VoidButtonBgDarken className='px-4 py-1' onClick={createRuleFile}>
 					{t('rules.createRule')}
-				</button>
+				</VoidButtonBgDarken>
 			</div>
 			{rules.length === 0 ? (
 				<p className='text-void-fg-3 text-sm'>{t('rules.noRules')}</p>
@@ -934,7 +1072,7 @@ const ProjectRulesSection = () => {
 							key={rule.uri.toString()}
 							className='p-3 rounded border border-void-border-2 bg-void-bg-2 cursor-pointer hover:bg-void-bg-2-alt transition-colors'
 							onClick={() => commandService.executeCommand('vscode.open', rule.uri)}
-							title='Click to open rule file'
+							title={t('settings.clickToOpen')}
 						>
 							<div className='flex items-center justify-between'>
 								<span className='text-void-fg-1 text-sm font-medium'>{rule.title}</span>
@@ -958,6 +1096,7 @@ const ProjectRulesSection = () => {
 const FastApplyMethodDropdown = () => {
 	const accessor = useAccessor()
 	const cortexideSettingsService = accessor.get('ICortexideSettingsService')
+	const { t } = useTranslation()
 
 	const options = useMemo(() => [true, false], [])
 
@@ -970,9 +1109,9 @@ const FastApplyMethodDropdown = () => {
 		options={options}
 		selectedOption={cortexideSettingsService.state.globalSettings.enableFastApply}
 		onChangeOption={onChangeOption}
-		getOptionDisplayName={(val) => val ? 'Fast Apply' : 'Slow Apply'}
-		getOptionDropdownName={(val) => val ? 'Fast Apply' : 'Slow Apply'}
-		getOptionDropdownDetail={(val) => val ? 'Output Search/Replace blocks' : 'Rewrite whole files'}
+		getOptionDisplayName={(val) => val ? t('settings.fastApply') : t('settings.slowApply')}
+		getOptionDropdownName={(val) => val ? t('settings.fastApply') : t('settings.slowApply')}
+		getOptionDropdownDetail={(val) => val ? t('settings.fastApplyDesc') : t('settings.slowApplyDesc')}
 		getOptionsEqual={(a, b) => a === b}
 	/>
 
@@ -987,6 +1126,7 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
     const refreshModelService = accessor.get('IRefreshModelService')
     const repoIndexerService = accessor.get('IRepoIndexerService')
     const cortexideSettingsService = accessor.get('ICortexideSettingsService')
+    const { t } = useTranslation()
 
     const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle')
     const [statusText, setStatusText] = useState<string>('')
@@ -1001,9 +1141,9 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
         (async () => {
             try {
                 const osProps = await nativeHostService.getOSProperties()
-                const t = (osProps.type + '').toLowerCase()
-                if (t.includes('windows')) setMethod('winget')
-                else if (t.includes('darwin') || t.includes('mac')) setMethod('brew')
+                const osType = (osProps.type + '').toLowerCase()
+                if (osType.includes('windows')) setMethod('winget')
+                else if (osType.includes('darwin') || osType.includes('mac')) setMethod('brew')
                 else setMethod('curl')
             } catch {}
         })()
@@ -1014,7 +1154,7 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
             const osProps = await nativeHostService.getOSProperties()
             const isWindows = (osProps.type + '').toLowerCase().includes('windows')
             setStatus('running')
-            setStatusText('Starting Ollama installation and opening the terminal...')
+            setStatusText(t('settings.startingInstall'))
 
             // open a visible persistent terminal to show progress
             const persistentTerminalId = await terminalToolService.createPersistentTerminal({ cwd: null })
@@ -1046,7 +1186,7 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                 }
             }
 
-            setStatusText('Running installer in terminal...')
+            setStatusText(t('settings.installerRunning'))
             const { resPromise } = await terminalToolService.runCommand(installCmd, { type: 'persistent', persistentTerminalId })
             resPromise.catch(() => { /* ignore */ })
 
@@ -1054,12 +1194,12 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
             cortexideSettingsService.setSettingOfProvider('ollama', 'endpoint', 'http://127.0.0.1:11434')
             refreshModelService.startRefreshingModels('ollama', { enableProviderOnSuccess: true, doNotFire: false })
             setStatus('running')
-            setStatusText('Installer launched. Detecting models...')
-            notificationService.info('Ollama install started in the integrated terminal. Models will appear when ready.')
+            setStatusText(t('settings.installerLaunched'))
+            notificationService.info(t('settings.installStarted'))
         } catch (e) {
-            notificationService.error('Failed to start Ollama install. Please try again or install manually.')
+            notificationService.error(t('settings.installStartFailedNotif'))
             setStatus('error')
-            setStatusText('Failed to start install. See terminal or try manual install.')
+            setStatusText(t('settings.installStartFailed'))
         }
     }, [terminalToolService, nativeHostService, notificationService, refreshModelService, cortexideSettingsService, method])
 
@@ -1101,7 +1241,7 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                 setIsHealthy(res.ok)
                 if (res.ok && status === 'running') {
                     setStatus('done')
-                    setStatusText('Ollama is running. Models will appear shortly.')
+                    setStatusText(t('settings.ollamaRunning'))
                 }
             } catch {
                 setIsHealthy(false)
@@ -1114,49 +1254,47 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
         return () => { if (tid) clearInterval(tid) }
     }, [status])
 
-    return <div className='prose-p:my-0 prose-ol:list-decimal prose-p:py-0 prose-ol:my-0 prose-ol:py-0 prose-span:my-0 prose-span:py-0 text-void-fg-3 text-sm list-decimal select-text'>
-        <div className='flex items-center gap-3'>
-            <ChatMarkdownRender string={`Ollama Setup (rev 2025-10-30-1)`} chatMessageLocation={undefined} />
+    return <div className='prose-p:my-0 prose-ol:list-decimal prose-p:py-0 prose-ol:my-0 prose-ol:py-0 prose-span:my-0 prose-span:py-0 text-void-fg-3 text-sm list-decimal select-text space-y-3'>
+        <div className='flex items-center gap-4 flex-wrap'>
+            <ChatMarkdownRender string={t('settings.ollamaSetupRev')} chatMessageLocation={undefined} />
             <select
-                className='dropdown text-xs px-1 py-0.5'
+                className='text-xs bg-void-bg-1 text-void-fg-1 border border-void-border-1 rounded px-1 py-0.5'
                 value={method}
                 onChange={(e) => setMethod(e.target.value as any)}
-                title='Install method'
+                title={t('settings.installMethod')}
             >
-                <option value='auto'>Auto</option>
-                <option value='brew'>Homebrew (macOS)</option>
-                <option value='curl'>Curl Script (macOS/Linux)</option>
-                <option value='winget'>Winget (Windows)</option>
-                <option value='choco'>Chocolatey (Windows)</option>
+                <option value='auto'>{t('settings.installMethod.auto')}</option>
+                <option value='brew'>{t('settings.installMethod.brew')}</option>
+                <option value='curl'>{t('settings.installMethod.curl')}</option>
+                <option value='winget'>{t('settings.installMethod.winget')}</option>
+                <option value='choco'>{t('settings.installMethod.choco')}</option>
             </select>
             <button
-                type="button"
-                className='btn btn-secondary btn-sm'
+                className='px-2 py-1 bg-void-bg-2 text-void-fg-1 border border-void-border-1 rounded hover:brightness-110 disabled:opacity-60'
                 onClick={onInstall}
                 disabled={status === 'running'}
-            >{status === 'running' ? 'Installing…' : 'Install Ollama'}</button>
+            >{status === 'running' ? t('settings.installingOllama') : t('settings.installOllamaBtn')}</button>
             {status === 'error' && (
                 <button
-                    type="button"
-                    className='btn btn-secondary btn-sm'
+                    className='px-2 py-1 bg-void-bg-1 text-void-fg-3 border border-void-border-2 rounded hover:brightness-110'
                     onClick={() => { setStatus('idle'); setStatusText(''); setTerminalOutput(''); setIsHealthy(null); }}
-                >Retry</button>
+                >{t('settings.retry')}</button>
             )}
             {isHealthy !== null && (
                 <span className={`text-xs px-2 py-0.5 rounded border ${isHealthy ? 'border-green-500 text-green-500' : 'border-void-border-2 text-void-fg-3'}`}>
-                    {isHealthy ? 'Healthy' : 'Waiting'}
+                    {isHealthy ? t('settings.healthy') : t('settings.waiting')}
                 </span>
             )}
         </div>
         {/* Inline Auto-tune toggle */}
-        <div className=' pl-6 mt-2 flex items-center gap-2'>
+        <div className=' pl-2 mt-3 flex items-center gap-3 flex-wrap'>
             <div className='flex items-center gap-2'>
                 <VoidSwitch
                     size='xxs'
                     value={!!cortexideSettingsService.state.globalSettings.enableAutoTuneOnPull}
                     onChange={(v) => cortexideSettingsService.setGlobalSetting('enableAutoTuneOnPull', !!v)}
                 />
-                <span className='text-void-fg-3 text-xs'>Auto-tune after pull</span>
+                <span className='text-void-fg-3 text-xs'>{t('settings.autoTuneAfterPull')}</span>
             </div>
             <div className='flex items-center gap-2 ml-4'>
                 <VoidSwitch
@@ -1164,19 +1302,19 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                     value={!!cortexideSettingsService.state.globalSettings.enableRepoIndexer}
                     onChange={(v) => cortexideSettingsService.setGlobalSetting('enableRepoIndexer', !!v)}
                 />
-                <span className='text-void-fg-3 text-xs'>Enable repo indexer</span>
+                <span className='text-void-fg-3 text-xs'>{t('settings.enableRepoIndexer')}</span>
             </div>
         </div>
         {/* Agent: auto-compaction + lifecycle hooks (opt-in) */}
-        <div className=' pl-6 mt-2 flex items-center gap-2'>
+        <div className=' pl-2 mt-3 flex items-center gap-3 flex-wrap'>
             <div className='flex items-center gap-2'>
                 <VoidSwitch
                     size='xxs'
                     value={!!cortexideSettingsService.state.globalSettings.enableAutoCompaction}
                     onChange={(v) => cortexideSettingsService.setGlobalSetting('enableAutoCompaction', !!v)}
                 />
-                <span className='text-void-fg-3 text-xs'>Auto-compact long agent runs</span>
-                <span className='text-void-fg-4 text-xs' title='When an agent run nears the model context window, send a compacted view (keep the task + recent messages) so it continues instead of overflowing. Non-destructive: the stored conversation is unchanged.'>
+                <span className='text-void-fg-3 text-xs'>{t('settings.autoCompact')}</span>
+                <span className='text-void-fg-4 text-xs' title={t('settings.autoCompactTooltip')}>
                     (i)
                 </span>
             </div>
@@ -1186,22 +1324,22 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                     value={!!cortexideSettingsService.state.globalSettings.enableLifecycleHooks}
                     onChange={(v) => cortexideSettingsService.setGlobalSetting('enableLifecycleHooks', !!v)}
                 />
-                <span className='text-void-fg-3 text-xs'>Lifecycle hooks</span>
-                <span className='text-void-fg-4 text-xs' title='Run your own commands from .cortexide/hooks.json at agent events (pre-tool, post-tool, agent-stop). Commands run quietly with no shell, fire-and-forget.'>
+                <span className='text-void-fg-3 text-xs'>{t('settings.lifecycleHooks')}</span>
+                <span className='text-void-fg-4 text-xs' title={t('settings.lifecycleHooksTooltip')}>
                     (i)
                 </span>
             </div>
         </div>
         {/* Web browsing settings */}
-        <div className=' pl-6 mt-2 flex items-center gap-2'>
+        <div className=' pl-2 mt-3 flex items-center gap-3 flex-wrap'>
             <div className='flex items-center gap-2'>
                 <VoidSwitch
                     size='xxs'
                     value={cortexideSettingsService.state.globalSettings.useHeadlessBrowsing !== false}
                     onChange={(v) => cortexideSettingsService.setGlobalSetting('useHeadlessBrowsing', v)}
                 />
-                <span className='text-void-fg-3 text-xs'>Use headless browsing</span>
-                <span className='text-void-fg-4 text-xs' title='Use headless BrowserWindow for better content extraction from complex pages. Disable to use direct HTTP fetch instead.'>
+                <span className='text-void-fg-3 text-xs'>{t('settings.useHeadlessBrowsing')}</span>
+                <span className='text-void-fg-4 text-xs' title={t('settings.useHeadlessBrowsingTooltip')}>
                     (i)
                 </span>
             </div>
@@ -1213,15 +1351,13 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
             <div className=' pl-6 mt-2'>
                 <div className='flex items-center gap-2 mb-1'>
                     <button
-                        type="button"
-                        className='btn btn-secondary btn-sm'
+                        className='px-2 py-0.5 bg-void-bg-1 text-void-fg-3 border border-void-border-2 rounded hover:brightness-110'
                         onClick={async () => { try { await navigator.clipboard.writeText(terminalOutput) } catch {} }}
-                    >Copy log</button>
+                    >{t('settings.copyLog')}</button>
                     <button
-                        type="button"
-                        className='btn btn-secondary btn-sm'
+                        className='px-2 py-0.5 bg-void-bg-1 text-void-fg-3 border border-void-border-2 rounded hover:brightness-110'
                         onClick={() => setTerminalOutput('')}
-                    >Clear</button>
+                    >{t('settings.clear')}</button>
                 </div>
                 <div className='border border-void-border-2 bg-void-bg-1 rounded p-2 max-h-48 overflow-auto text-xs whitespace-pre-wrap'>
                     {terminalOutput}
@@ -1229,26 +1365,26 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
             </div>
         )}
         <div className=' pl-6 mt-2 flex items-center gap-2 whitespace-nowrap'>
-            <span className='text-void-fg-3 text-xs'>Pull model:</span>
+            <span className='text-void-fg-3 text-xs'>{t('settings.pullModel')}</span>
             <select
-                className='dropdown text-xs px-1 py-0.5 shrink-0'
+                className='text-xs bg-void-bg-1 text-void-fg-1 border border-void-border-1 rounded px-1 py-0.5 shrink-0'
                 value={modelTag}
                 onChange={(e) => setModelTag(e.target.value)}
             >
-                <optgroup label="Code Models">
+                <optgroup label={t('settings.codeModels')}>
                     <option value='llama3.1'>llama3.1</option>
                     <option value='llama3.2'>llama3.2</option>
                     <option value='qwen2.5-coder'>qwen2.5-coder</option>
                     <option value='deepseek-coder'>deepseek-coder</option>
                 </optgroup>
-                <optgroup label="Vision Models (Image Analysis)">
-                    <option value='llava'>llava (Vision)</option>
-                    <option value='bakllava'>bakllava (Vision)</option>
-                    <option value='llava:13b'>llava:13b (Vision, Better Quality)</option>
-                    <option value='llava:7b'>llava:7b (Vision, Faster)</option>
-                    <option value='bakllava:7b'>bakllava:7b (Vision)</option>
+                <optgroup label={t('settings.visionModels')}>
+                    <option value='llava'>llava {t('settings.vision')}</option>
+                    <option value='bakllava'>bakllava {t('settings.vision')}</option>
+                    <option value='llava:13b'>llava:13b {t('settings.visionBetterQuality')}</option>
+                    <option value='llava:7b'>llava:7b {t('settings.visionFaster')}</option>
+                    <option value='bakllava:7b'>bakllava:7b {t('settings.vision')}</option>
                 </optgroup>
-                <optgroup label="General Purpose">
+                <optgroup label={t('settings.generalPurpose')}>
                     <option value='llama3'>llama3</option>
                     <option value='mistral'>mistral</option>
                     <option value='mixtral'>mixtral</option>
@@ -1256,18 +1392,17 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                 </optgroup>
             </select>
             <button
-                type="button"
-                className='btn btn-secondary btn-sm shrink-0'
+                className='px-2 py-1 bg-void-bg-2 text-void-fg-1 border border-void-border-1 rounded hover:brightness-110 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed'
                 disabled={!modelTag || status === 'running'}
                 onClick={async () => {
                     if (!modelTag) {
-                        notificationService.warn('Please select a model to pull.')
+                        notificationService.warn(t('settings.selectModelPull'))
                         return
                     }
 
                     try {
                         setStatus('running')
-                        setStatusText(`Pulling ${modelTag}...`)
+                        setStatusText(t('settings.pullInProgress').replace('{0}', modelTag))
 
                         // Check if current terminal exists, create new one if not
                         let terminalId = currentTerminalId
@@ -1290,15 +1425,15 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                                         const resultText = result || ''
                                         if (resultText.toLowerCase().includes('error') || resultText.toLowerCase().includes('failed')) {
                                             setStatus('error')
-                                            setStatusText(`Failed to pull ${modelTag}. Check terminal for details.`)
-                                            notificationService.error(`Failed to pull model "${modelTag}". See terminal for details.`)
+                                            setStatusText(t('settings.pullFailedShort').replace('{0}', modelTag))
+                                            notificationService.error(t('settings.modelPullFailed').replace('{0}', modelTag))
                                             return
                                         }
 
                                         // Success - update status and refresh models
                                         setStatus('done')
-                                        setStatusText(`Successfully pulled ${modelTag}`)
-                                        notificationService.info(`Model "${modelTag}" pulled successfully.`)
+                                        setStatusText(t('settings.pullSuccess').replace('{0}', modelTag))
+                                        notificationService.info(t('settings.modelPulledSuccess').replace('{0}', modelTag))
 
                                         // Refresh models after a short delay
                                         setTimeout(() => {
@@ -1331,9 +1466,9 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                                             // Lightweight: warm project index placeholder (runs in background)
                                             try {
                                                 if (cortexideSettingsService.state.globalSettings.enableRepoIndexer) {
-                                                    notificationService.info('Warming project index...')
+                                                    notificationService.info(t('settings.warmingIndex'))
                                                     repoIndexerService.warmIndex(undefined).then(() => {
-                                                        notificationService.info('Project index warmed.')
+                                                        notificationService.info(t('settings.indexWarmed'))
                                                     }).catch(() => { })
                                                 }
                                             } catch { }
@@ -1342,15 +1477,15 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                                         // Non-zero exit code indicates failure
                                         const resultText = result || 'Unknown error'
                                         setStatus('error')
-                                        setStatusText(`Failed to pull ${modelTag} (exit code ${resolveReason.exitCode}). Check terminal for details.`)
-                                        notificationService.error(`Failed to pull model "${modelTag}": ${resultText}. See terminal for details.`)
+                                        setStatusText(t('settings.pullFailedExit').replace('{0}', modelTag).replace('{1}', String(resolveReason.exitCode)))
+                                        notificationService.error(t('settings.modelPullFailed').replace('{0}', modelTag))
                                     }
                                 } else if (resolveReason.type === 'timeout') {
                                     // Command timed out (pull can take a while, this is expected for large models)
                                     // Still try to refresh models - the pull might be continuing in background
                                     setStatus('done')
-                                    setStatusText(`Pulling ${modelTag}... (may take time for large models)`)
-                                    notificationService.info(`Started pulling "${modelTag}". This may take a while for large models. Check terminal for progress.`)
+                                    setStatusText(t('settings.pullInProgressLong').replace('{0}', modelTag))
+                                    notificationService.info(t('settings.pullStarted').replace('{0}', modelTag))
                                     // Refresh models after a delay - the model might appear when ready
                                     setTimeout(() => {
                                         refreshModelService.startRefreshingModels('ollama', { enableProviderOnSuccess: true, doNotFire: false })
@@ -1360,35 +1495,34 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                             .catch((error) => {
                                 setStatus('error')
                                 const errorMsg = error?.message || String(error) || 'Unknown error'
-                                setStatusText(`Error pulling ${modelTag}: ${errorMsg}`)
-                                notificationService.error(`Failed to pull model "${modelTag}": ${errorMsg}`)
+                                setStatusText(t('settings.pullError').replace('{0}', modelTag).replace('{1}', errorMsg))
+                                notificationService.error(t('settings.modelPullFailed').replace('{0}', modelTag))
                                 console.error('Pull error:', error)
                             })
                     } catch (error) {
                         setStatus('error')
                         const errorMsg = error?.message || String(error) || 'Unknown error'
-                        setStatusText(`Failed to start pull: ${errorMsg}`)
-                        notificationService.error(`Failed to start pulling model "${modelTag}": ${errorMsg}`)
+                        setStatusText(t('settings.pullStartFailed').replace('{0}', errorMsg))
+                        notificationService.error(t('settings.modelPullFailed').replace('{0}', modelTag))
                         console.error('Pull setup error:', error)
                     }
                 }}
-            >Pull</button>
+            >{t('settings.pull')}</button>
             <button
-                type="button"
-                className='btn btn-sm btn-stop shrink-0'
+                className='px-2 py-1 bg-red-600/80 text-white border border-red-500/80 rounded hover:brightness-110 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed'
                 disabled={!modelTag || status === 'running'}
                 onClick={async () => {
                     if (!modelTag) {
-                        notificationService.warn('Please select a model to delete.')
+                        notificationService.warn(t('settings.selectModelDelete'))
                         return
                     }
 
-                    const ok = window.confirm(`Delete model "${modelTag}" from Ollama?`)
+                    const ok = window.confirm(t('settings.confirmDeleteModel').replace('{0}', modelTag))
                     if (!ok) return
 
                     try {
                         setStatus('running')
-                        setStatusText(`Deleting ${modelTag}...`)
+                        setStatusText(t('settings.deleteStarted').replace('{0}', modelTag))
 
                         // Check if current terminal exists, create new one if not
                         let terminalId = currentTerminalId
@@ -1409,8 +1543,8 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                                     if (resolveReason.exitCode === 0) {
                                         // Success - update status and refresh models
                                         setStatus('done')
-                                        setStatusText(`Successfully deleted ${modelTag}`)
-                                        notificationService.info(`Model "${modelTag}" deleted successfully.`)
+                                        setStatusText(t('settings.deleteSuccess').replace('{0}', modelTag))
+                                        notificationService.info(t('settings.modelDeletedSuccess').replace('{0}', modelTag))
 
                                         // Refresh models after a short delay
                                         setTimeout(() => {
@@ -1420,14 +1554,14 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                                         // Non-zero exit code indicates failure
                                         const resultText = result || 'Unknown error'
                                         setStatus('error')
-                                        setStatusText(`Failed to delete ${modelTag} (exit code ${resolveReason.exitCode}). Check terminal for details.`)
-                                        notificationService.error(`Failed to delete model "${modelTag}": ${resultText}. See terminal for details.`)
+                                        setStatusText(t('settings.deleteFailedExit').replace('{0}', modelTag).replace('{1}', String(resolveReason.exitCode)))
+                                        notificationService.error(t('settings.modelDeleteFailed').replace('{0}', modelTag))
                                     }
                                 } else if (resolveReason.type === 'timeout') {
                                     // Command timed out (shouldn't happen for delete, but handle it)
                                     setStatus('error')
-                                    setStatusText(`Delete command timed out for ${modelTag}. The command may still be running.`)
-                                    notificationService.warn(`Delete command for "${modelTag}" timed out. Check terminal to see if it completed.`)
+                                    setStatusText(t('settings.deleteTimeoutShort').replace('{0}', modelTag))
+                                    notificationService.warn(t('settings.deleteTimeout').replace('{0}', modelTag))
                                     // Still try to refresh models in case it did complete
                                     setTimeout(() => {
                                         refreshModelService.startRefreshingModels('ollama', { enableProviderOnSuccess: true, doNotFire: false })
@@ -1437,23 +1571,23 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
                             .catch((error) => {
                                 setStatus('error')
                                 const errorMsg = error?.message || String(error) || 'Unknown error'
-                                setStatusText(`Error deleting ${modelTag}: ${errorMsg}`)
-                                notificationService.error(`Failed to delete model "${modelTag}": ${errorMsg}`)
+                                setStatusText(t('settings.deleteError').replace('{0}', modelTag).replace('{1}', errorMsg))
+                                notificationService.error(t('settings.modelDeleteFailed').replace('{0}', modelTag))
                                 console.error('Delete error:', error)
                             })
                     } catch (error) {
                         setStatus('error')
                         const errorMsg = error?.message || String(error) || 'Unknown error'
-                        setStatusText(`Failed to start delete: ${errorMsg}`)
-                        notificationService.error(`Failed to start deleting model "${modelTag}": ${errorMsg}`)
+                        setStatusText(t('settings.deleteStartFailed').replace('{0}', errorMsg))
+                        notificationService.error(t('settings.modelDeleteFailed').replace('{0}', modelTag))
                         console.error('Delete setup error:', error)
                     }
                 }}
-            >Delete</button>
+            >{t('settings.deleteModel')}</button>
         </div>
-        <div className=' pl-6'><ChatMarkdownRender string={`1. If the install does not start, download Ollama manually from [ollama.com/download](https://ollama.com/download).`} chatMessageLocation={undefined} /></div>
-        <div className=' pl-6'><ChatMarkdownRender string={`2. Optionally, run \`ollama pull llama3.1\` to install a starter model.`} chatMessageLocation={undefined} /></div>
-        {sayWeAutoDetect && <div className=' pl-6'><ChatMarkdownRender string={`CortexIDE automatically detects locally running models and enables them.`} chatMessageLocation={undefined} /></div>}
+        <div className=' pl-6'><ChatMarkdownRender string={t('settings.manuallyInstall1')} chatMessageLocation={undefined} /></div>
+        <div className=' pl-6'><ChatMarkdownRender string={t('settings.manuallyInstall2')} chatMessageLocation={undefined} /></div>
+        {sayWeAutoDetect && <div className=' pl-6'><ChatMarkdownRender string={t('settings.autoDetectModels')} chatMessageLocation={undefined} /></div>}
     </div>
 }
 
@@ -1461,11 +1595,12 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
 const RedoOnboardingButton = ({ className }: { className?: string }) => {
 	const accessor = useAccessor()
 	const cortexideSettingsService = accessor.get('ICortexideSettingsService')
+	const { t } = useTranslation()
 	return <div
 		className={`text-void-fg-4 flex flex-nowrap text-nowrap items-center hover:brightness-110 cursor-pointer ${className}`}
 		onClick={() => { cortexideSettingsService.setGlobalSetting('isOnboardingComplete', false) }}
 	>
-		See onboarding screen?
+		{t('settings.seeOnboarding')}
 	</div>
 
 }
@@ -1503,6 +1638,7 @@ export const ToolApprovalTypeSwitch = ({ approvalType, size, desc }: { approvalT
 
 
 export const OneClickSwitchButton = ({ fromEditor = 'VS Code', className = '' }: { fromEditor?: TransferEditorType, className?: string }) => {
+	const { t } = useTranslation()
 	const accessor = useAccessor()
 	const extensionTransferService = accessor.get('IExtensionTransferService')
 
@@ -1529,13 +1665,13 @@ export const OneClickSwitchButton = ({ fromEditor = 'VS Code', className = '' }:
 	}
 
 	return <>
-		<button type="button" className={`btn btn-secondary btn-sm max-w-48 p-4 ${className ?? ''}`.trim()} disabled={transferState.type !== 'done'} onClick={onClick}>
-			{transferState.type === 'done' ? `Transfer from ${fromEditor}`
-				: transferState.type === 'loading' ? <span className='text-nowrap flex flex-nowrap items-center gap-1'>Transferring<IconLoading state="processing" inline /></span>
-					: transferState.type === 'justfinished' ? <AnimatedCheckmarkButton text='Settings Transferred' className='bg-none' />
+		<VoidButtonBgDarken className={`max-w-48 p-4 ${className}`} disabled={transferState.type !== 'done'} onClick={onClick}>
+			{transferState.type === 'done' ? t('settings.transferFrom').replace('{0}', fromEditor)
+				: transferState.type === 'loading' ? <span className='text-nowrap flex flex-nowrap items-center gap-1'>{t('settings.transferring')}<IconLoading state="processing" inline /></span>
+					: transferState.type === 'justfinished' ? <AnimatedCheckmarkButton text={t('settings.settingsTransferred')} className='bg-none' />
 						: null
 			}
-		</button>
+		</VoidButtonBgDarken>
 		{transferState.type === 'done' && transferState.error ? <WarningBox text={transferState.error} /> : null}
 	</>
 }
@@ -1546,6 +1682,7 @@ export const OneClickSwitchButton = ({ fromEditor = 'VS Code', className = '' }:
 // MCP Server component
 const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer }) => {
 	const accessor = useAccessor();
+	const { t } = useTranslation();
 	const mcpService = accessor.get('IMCPService');
 
 	const voidSettings = useSettingsState()
@@ -1598,7 +1735,7 @@ const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer 
 								</span>
 							))
 						) : (
-							<span className="text-xs text-void-fg-3">No tools available</span>
+							<span className="text-xs text-void-fg-3">{t('settings.noToolsAvailable')}</span>
 						)}
 					</div>
 				</div>
@@ -1607,7 +1744,7 @@ const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer 
 			{/* Command badge */}
 			{isOn && server.command && (
 				<div className="mt-3">
-					<div className="text-xs text-void-fg-3 mb-1">Command:</div>
+					<div className="text-xs text-void-fg-3 mb-1">{t('settings.command')}</div>
 					<div className="px-2 py-1 bg-void-bg-2 text-xs font-mono overflow-x-auto whitespace-nowrap text-void-fg-2 rounded-sm">
 						{server.command}
 					</div>
@@ -1627,6 +1764,7 @@ const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer 
 // Main component that renders the list of servers
 const MCPServersList = () => {
 	const mcpServiceState = useMCPServiceState()
+	const { t } = useTranslation()
 
 	let content: React.ReactNode
 	if (mcpServiceState.error) {
@@ -1638,7 +1776,7 @@ const MCPServersList = () => {
 		const entries = Object.entries(mcpServiceState.mcpServerOfName)
 		if (entries.length === 0) {
 			content = <div className="text-void-fg-3 text-sm mt-2">
-				No servers found
+				{t('settings.noServersFound')}
 			</div>
 		}
 		else {
@@ -1681,15 +1819,15 @@ export const Settings = () => {
 	const metricsService = accessor.get('IMetricsService')
 	const isOptedOut = useIsOptedOut()
 
-	const onDownload = (t: 'Chats' | 'Settings') => {
+	const onDownload = (dataType: 'Chats' | 'Settings') => {
 		let dataStr: string
 		let downloadName: string
-		if (t === 'Chats') {
+		if (dataType === 'Chats') {
 			// Export chat threads
 			dataStr = JSON.stringify(chatThreadsService.state, null, 2)
 			downloadName = 'void-chats.json'
 		}
-		else if (t === 'Settings') {
+		else if (dataType === 'Settings') {
 			// Export user settings
 			dataStr = JSON.stringify(cortexideSettingsService.state, null, 2)
 			downloadName = 'void-settings.json'
@@ -1715,7 +1853,7 @@ export const Settings = () => {
 
 	const [s, ss] = useState(0)
 
-	const handleUpload = (t: 'Chats' | 'Settings') => (e: React.ChangeEvent<HTMLInputElement>,) => {
+	const handleUpload = (dataType: 'Chats' | 'Settings') => (e: React.ChangeEvent<HTMLInputElement>,) => {
 		const files = e.target.files
 		if (!files) return;
 		const file = files[0]
@@ -1726,16 +1864,16 @@ export const Settings = () => {
 			try {
 				const json = JSON.parse(reader.result as string);
 
-				if (t === 'Chats') {
+				if (dataType === 'Chats') {
 					chatThreadsService.dangerousSetState(json as any)
 				}
-				else if (t === 'Settings') {
+				else if (dataType === 'Settings') {
 					cortexideSettingsService.dangerousSetState(json as any)
 				}
 
-				notificationService.info(`${t} imported successfully!`)
+				notificationService.info(t('settings.importedSuccess').replace('{0}', dataType))
 			} catch (err) {
-				notificationService.notify({ message: `Failed to import ${t}`, source: err + '', severity: Severity.Error, })
+				notificationService.notify({ message: t('settings.importFailed').replace('{0}', dataType), source: err + '', severity: Severity.Error, })
 			}
 		};
 		reader.readAsText(file);
@@ -1764,7 +1902,6 @@ export const Settings = () => {
 						{navItems.map(({ tab, label }) => (
 							<button
 								key={tab}
-								type="button"
 								onClick={() => {
 									if (tab === 'all') {
 										setSelectedSection('all');
@@ -1773,9 +1910,12 @@ export const Settings = () => {
 										setSelectedSection(tab);
 									}
 								}}
-								className={`btn btn-sm w-full justify-start text-left py-2 px-4 ${
-									selectedSection === tab ? 'btn-primary' : 'btn-secondary'
-								}`}
+								className={`
+          py-2 px-4 rounded-md text-left transition-all duration-200
+          ${selectedSection === tab
+										? 'bg-[var(--cortex-brand)] text-white font-medium shadow-sm'
+										: 'bg-void-bg-2 hover:bg-void-bg-2/80 text-void-fg-1'}
+        `}
 							>
 								{label}
 							</button>
@@ -1790,7 +1930,7 @@ export const Settings = () => {
 
 					<div className='max-w-3xl'>
 
-						<h1 className='text-2xl w-full'>{`CortexIDE Settings`}</h1>
+						<h1 className='text-2xl w-full'>{t('settings.title')}</h1>
 
 						<div className='w-full h-[1px] my-2' />
 
@@ -1806,7 +1946,7 @@ export const Settings = () => {
 							{/* Models section (formerly FeaturesTab) */}
 							<div className={shouldShowTab('models') ? `` : 'hidden'}>
 								<ErrorBoundary>
-									<h2 className={`text-3xl mb-2`}>Models</h2>
+									<h2 className={`text-3xl mb-2`}>{t('settings.models')}</h2>
 									<ModelDump />
 									<div className='w-full h-[1px] my-4' />
 									<AutoDetectLocalModelsToggle />
@@ -1817,8 +1957,8 @@ export const Settings = () => {
 							{/* Local Providers section */}
 							<div className={shouldShowTab('localProviders') ? `` : 'hidden'}>
 								<ErrorBoundary>
-									<h2 className={`text-3xl mb-2`}>Local Providers</h2>
-							<h3 className={`text-void-fg-3 mb-2`}>{`CortexIDE can access any model that you host locally. We automatically detect your local models by default.`}</h3>
+									<h2 className={`text-3xl mb-2`}>{t('settings.localProviders')}</h2>
+							<h3 className={`text-void-fg-3 mb-2`}>{t('settings.localProvidersDesc')}</h3>
 
 									<div className='opacity-80 mb-4'>
 										<OllamaSetupInstructions sayWeAutoDetect={true} />
@@ -1831,8 +1971,8 @@ export const Settings = () => {
 							{/* Main Providers section */}
 							<div className={shouldShowTab('providers') ? `` : 'hidden'}>
 								<ErrorBoundary>
-									<h2 className={`text-3xl mb-2`}>Main Providers</h2>
-							<h3 className={`text-void-fg-3 mb-2`}>{`CortexIDE can access models from Anthropic, OpenAI, OpenRouter, and more.`}</h3>
+									<h2 className={`text-3xl mb-2`}>{t('settings.mainProviders')}</h2>
+							<h3 className={`text-void-fg-3 mb-2`}>{t('settings.mainProvidersDesc')}</h3>
 
 									<VoidProviderSettings providerNames={nonlocalProviderNames} />
 									<div className='w-full h-[1px] my-4' />
@@ -1843,24 +1983,24 @@ export const Settings = () => {
 							{/* Feature Options section */}
 							<div className={shouldShowTab('featureOptions') ? `` : 'hidden'}>
 								<ErrorBoundary>
-									<h2 className={`text-3xl mb-2`}>Feature Options</h2>
+									<h2 className={`text-3xl mb-2`}>{t('settings.featureOptions')}</h2>
 
 									<div className='flex flex-col gap-y-8 my-4'>
 										<ErrorBoundary>
 											{/* FIM */}
 											<div>
-												<h4 className={`text-base`}>{displayInfoOfFeatureName('Autocomplete')}</h4>
+												<h4 className={`text-base`}>{t('settings.feature.Autocomplete')}</h4>
 												<div className='text-sm text-void-fg-3 mt-1'>
 													<span>
-														Experimental.{' '}
+														{t('settings.autocompleteDesc')}{' '}
 													</span>
 													<span
 														className='hover:brightness-110'
 														data-tooltip-id='cortex-tooltip'
-														data-tooltip-content='We recommend using the largest qwen2.5-coder model you can with Ollama (try qwen2.5-coder:3b).'
+														data-tooltip-content={t('settings.recommendOllama')}
 														data-tooltip-class-name='void-max-w-[20px]'
 													>
-														Only works with FIM models.*
+														{t('settings.autocompleteHint')}
 													</span>
 												</div>
 
@@ -1873,7 +2013,7 @@ export const Settings = () => {
 																value={settingsState.globalSettings.enableAutocomplete}
 																onChange={(newVal) => cortexideSettingsService.setGlobalSetting('enableAutocomplete', newVal)}
 															/>
-															<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.enableAutocomplete ? 'Enabled' : 'Disabled'}</span>
+															<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.enableAutocomplete ? t('settings.enabled') : t('settings.disabled')}</span>
 														</div>
 													</ErrorBoundary>
 
@@ -1893,8 +2033,8 @@ export const Settings = () => {
 										<ErrorBoundary>
 
 											<div className='w-full'>
-												<h4 className={`text-base`}>{displayInfoOfFeatureName('Apply')}</h4>
-												<div className='text-sm text-void-fg-3 mt-1'>Settings that control the behavior of the Apply button.</div>
+												<h4 className={`text-base`}>{t('settings.feature.Apply')}</h4>
+												<div className='text-sm text-void-fg-3 mt-1'>{t('settings.applyDesc')}</div>
 
 												<div className='my-2'>
 													{/* Sync to Chat Switch */}
@@ -1904,7 +2044,7 @@ export const Settings = () => {
 															value={settingsState.globalSettings.syncApplyToChat}
 															onChange={(newVal) => cortexideSettingsService.setGlobalSetting('syncApplyToChat', newVal)}
 														/>
-														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.syncApplyToChat ? 'Same as Chat model' : 'Different model'}</span>
+														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.syncApplyToChat ? t('settings.sameAsChat') : t('settings.differentModel')}</span>
 													</div>
 
 													{/* Model Dropdown */}
@@ -1929,15 +2069,15 @@ export const Settings = () => {
 
 										{/* Tools Section */}
 										<div>
-											<h4 className={`text-base`}>Tools</h4>
-											<div className='text-sm text-void-fg-3 mt-1'>{`Tools are functions that LLMs can call. Some tools require user approval.`}</div>
+											<h4 className={`text-base`}>{t('settings.tools')}</h4>
+										<div className='text-sm text-void-fg-3 mt-1'>{t('settings.toolsDesc')}</div>
 
 											<div className='my-2'>
 												{/* Auto Accept Switch */}
 												<ErrorBoundary>
 													{[...toolApprovalTypes].map((approvalType) => {
 														return <div key={approvalType} className="flex items-center gap-x-2 my-2">
-															<ToolApprovalTypeSwitch size='xs' approvalType={approvalType} desc={`Auto-approve ${approvalType}`} />
+															<ToolApprovalTypeSwitch size='xs' approvalType={approvalType} desc={t('settings.autoApprove').replace('{0}', approvalType)} />
 														</div>
 													})}
 
@@ -1952,7 +2092,7 @@ export const Settings = () => {
 															value={settingsState.globalSettings.includeToolLintErrors}
 															onChange={(newVal) => cortexideSettingsService.setGlobalSetting('includeToolLintErrors', newVal)}
 														/>
-														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.includeToolLintErrors ? 'Fix lint errors' : `Fix lint errors`}</span>
+														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.includeToolLintErrors ? t('settings.fixLintErrors') : t('settings.fixLintErrors')}</span>
 													</div>
 												</ErrorBoundary>
 
@@ -1964,7 +2104,7 @@ export const Settings = () => {
 															value={settingsState.globalSettings.autoAcceptLLMChanges}
 															onChange={(newVal) => cortexideSettingsService.setGlobalSetting('autoAcceptLLMChanges', newVal)}
 														/>
-														<span className='text-void-fg-3 text-xs pointer-events-none'>Auto-accept LLM changes</span>
+														<span className='text-void-fg-3 text-xs pointer-events-none'>{t('settings.autoAcceptLLMChanges')}</span>
 													</div>
 												</ErrorBoundary>
 											</div>
@@ -1973,20 +2113,20 @@ export const Settings = () => {
 										{/* Routing Policy Section */}
 										<ErrorBoundary>
 											<div>
-												<h4 className={`text-base`}>Routing policy</h4>
+												<h4 className={`text-base`}>{t('settings.routingPolicy')}</h4>
 												<div className='text-sm text-void-fg-3 mt-1'>
-													Controls how CortexIDE picks between configured model providers. Free-tier ladder tracks per-provider quotas and auto-fails-over on 429.
+													{t('settings.routingPolicyDesc')}
 												</div>
 												<div className='my-2'>
 													<select
 														className='text-xs bg-void-bg-1 text-void-fg-1 border border-void-border-1 rounded px-1 py-0.5'
 														value={settingsState.globalSettings.routingPolicy ?? 'auto-cheapest'}
 														onChange={(e) => cortexideSettingsService.setGlobalSetting('routingPolicy', e.target.value as ('auto-cheapest' | 'free-tier' | 'local-only'))}
-														title='Routing policy'
+														title={t('settings.routingPolicy')}
 													>
-														<option value='auto-cheapest'>Auto (cheapest viable)</option>
-														<option value='free-tier'>Free-tier ladder</option>
-														<option value='local-only'>Local only</option>
+														<option value='auto-cheapest'>{t('settings.routingPolicy.autoCheapest')}</option>
+														<option value='free-tier'>{t('settings.routingPolicy.freeTier')}</option>
+														<option value='local-only'>{t('settings.routingPolicy.localOnly')}</option>
 													</select>
 												</div>
 											</div>
@@ -1995,9 +2135,9 @@ export const Settings = () => {
 										{/* YOLO Mode Section */}
 										<ErrorBoundary>
 											<div>
-												<h4 className={`text-base`}>YOLO Mode</h4>
+												<h4 className={`text-base`}>{t('settings.yoloMode')}</h4>
 												<div className='text-sm text-void-fg-3 mt-1'>
-													Automatically apply low-risk edits without approval. High-risk edits always require approval.
+													{t('settings.yoloModeDesc')}
 												</div>
 
 												<div className='my-2'>
@@ -2010,7 +2150,7 @@ export const Settings = () => {
 																onChange={(newVal) => cortexideSettingsService.setGlobalSetting('enableYOLOMode', newVal)}
 															/>
 															<span className='text-void-fg-3 text-xs pointer-events-none'>
-																{settingsState.globalSettings.enableYOLOMode ? 'Enabled' : 'Disabled'}
+																{settingsState.globalSettings.enableYOLOMode ? t('settings.enabled') : t('settings.disabled')}
 															</span>
 														</div>
 													</ErrorBoundary>
@@ -2020,10 +2160,10 @@ export const Settings = () => {
 														<div className='my-4 space-y-3'>
 															<div>
 																<label className='text-sm text-void-fg-2 mb-1 block'>
-																	Risk Threshold: {(settingsState.globalSettings.yoloRiskThreshold ?? 0.2).toFixed(2)}
+																	{t('settings.yoloRiskThreshold')}: {(settingsState.globalSettings.yoloRiskThreshold ?? 0.2).toFixed(2)}
 																</label>
 																<div className='text-xs text-void-fg-3 mb-2'>
-																	Edits with risk below this threshold will auto-apply (0.0 = safe, 1.0 = dangerous)
+																	{t('settings.yoloRiskDesc')}
 																</div>
 																<input
 																	type='range'
@@ -2038,10 +2178,10 @@ export const Settings = () => {
 
 															<div>
 																<label className='text-sm text-void-fg-2 mb-1 block'>
-																	Confidence Threshold: {(settingsState.globalSettings.yoloConfidenceThreshold ?? 0.7).toFixed(2)}
+																	{t('settings.yoloConfidenceThreshold')}: {(settingsState.globalSettings.yoloConfidenceThreshold ?? 0.7).toFixed(2)}
 																</label>
 																<div className='text-xs text-void-fg-3 mb-2'>
-																	Edits with confidence above this threshold will auto-apply (0.0 = uncertain, 1.0 = confident)
+																	{t('settings.yoloConfidenceDesc')}
 																</div>
 																<input
 																	type='range'
@@ -2062,8 +2202,8 @@ export const Settings = () => {
 
 
 										<div className='w-full'>
-											<h4 className={`text-base`}>Editor</h4>
-								<div className='text-sm text-void-fg-3 mt-1'>{`Settings that control the visibility of CortexIDE suggestions in the code editor.`}</div>
+											<h4 className={`text-base`}>{t('settings.editor')}</h4>
+								<div className='text-sm text-void-fg-3 mt-1'>{t('settings.editorDesc')}</div>
 
 											<div className='my-2'>
 												{/* Auto Accept Switch */}
@@ -2074,7 +2214,7 @@ export const Settings = () => {
 															value={settingsState.globalSettings.showInlineSuggestions}
 															onChange={(newVal) => cortexideSettingsService.setGlobalSetting('showInlineSuggestions', newVal)}
 														/>
-														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.showInlineSuggestions ? 'Show suggestions on select' : 'Show suggestions on select'}</span>
+														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.showInlineSuggestions ? t('settings.showSuggestionsOnSelect') : t('settings.showSuggestionsOnSelect')}</span>
 													</div>
 												</ErrorBoundary>
 											</div>
@@ -2084,8 +2224,8 @@ export const Settings = () => {
 										<ErrorBoundary>
 
 											<div className='w-full'>
-												<h4 className={`text-base`}>{displayInfoOfFeatureName('SCM')}</h4>
-												<div className='text-sm text-void-fg-3 mt-1'>Settings that control the behavior of the commit message generator.</div>
+												<h4 className={`text-base`}>{t('settings.feature.SCM')}</h4>
+												<div className='text-sm text-void-fg-3 mt-1'>{t('settings.scmDesc')}</div>
 
 												<div className='my-2'>
 													{/* Sync to Chat Switch */}
@@ -2095,7 +2235,7 @@ export const Settings = () => {
 															value={settingsState.globalSettings.syncSCMToChat}
 															onChange={(newVal) => cortexideSettingsService.setGlobalSetting('syncSCMToChat', newVal)}
 														/>
-														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.syncSCMToChat ? 'Same as Chat model' : 'Different model'}</span>
+														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.syncSCMToChat ? t('settings.sameAsChat') : t('settings.differentModel')}</span>
 													</div>
 
 													{/* Model Dropdown */}
@@ -2112,11 +2252,18 @@ export const Settings = () => {
 
 							{/* General section */}
 							<div className={`${shouldShowTab('general') ? `` : 'hidden'} flex flex-col gap-12`}>
+								{/* Language selector */}
+								<div>
+									<h2 className='text-3xl mb-2'>{t('settings.language')}</h2>
+									<h4 className='text-void-fg-3 mb-4'>{t('settings.languageDesc')}</h4>
+									<LanguageSelector />
+								</div>
+
 								{/* One-Click Switch section */}
 								<div>
 									<ErrorBoundary>
-										<h2 className='text-3xl mb-2'>One-Click Switch</h2>
-						<h4 className='text-void-fg-3 mb-4'>{`Transfer your editor settings into CortexIDE.`}</h4>
+										<h2 className='text-3xl mb-2'>{t('settings.oneClickSwitch')}</h2>
+						<h4 className='text-void-fg-3 mb-4'>{t('settings.oneClickSwitchDesc')}</h4>
 
 										<div className='flex flex-col gap-2'>
 											<OneClickSwitchButton className='w-48' fromEditor="VS Code" />
@@ -2128,34 +2275,34 @@ export const Settings = () => {
 
 								{/* Import/Export section */}
 								<div>
-									<h2 className='text-3xl mb-2'>Import/Export</h2>
-							<h4 className='text-void-fg-3 mb-4'>{`Transfer CortexIDE's settings and chats in and out of CortexIDE.`}</h4>
+									<h2 className='text-3xl mb-2'>{t('settings.importExport')}</h2>
+						<h4 className='text-void-fg-3 mb-4'>{t('settings.importExportDesc')}</h4>
 									<div className='flex flex-col gap-8'>
 										{/* Settings Subcategory */}
 										<div className='flex flex-col gap-2 max-w-48 w-full'>
 											<input key={2 * s} ref={fileInputSettingsRef} type='file' accept='.json' className='hidden' onChange={handleUpload('Settings')} />
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1 w-full" onClick={() => { fileInputSettingsRef.current?.click() }}>
-												Import Settings
-											</button>
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1 w-full" onClick={() => onDownload('Settings')}>
-												Export Settings
-											</button>
+											<VoidButtonBgDarken className='px-4 py-1 w-full' onClick={() => { fileInputSettingsRef.current?.click() }}>
+												{t('settings.importSettings')}
+											</VoidButtonBgDarken>
+											<VoidButtonBgDarken className='px-4 py-1 w-full' onClick={() => onDownload('Settings')}>
+												{t('settings.exportSettings')}
+											</VoidButtonBgDarken>
 											<ConfirmButton className='px-4 py-1 w-full' onConfirm={() => { cortexideSettingsService.resetState(); }}>
-												Reset Settings
+												{t('settings.resetSettings')}
 											</ConfirmButton>
 										</div>
 
 										{/* Chats Subcategory */}
 										<div className='flex flex-col gap-2 max-w-48 w-full'>
 											<input key={2 * s + 1} ref={fileInputChatsRef} type='file' accept='.json' className='hidden' onChange={handleUpload('Chats')} />
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1 w-full" onClick={() => { fileInputChatsRef.current?.click() }}>
-												Import Chats
-											</button>
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1 w-full" onClick={() => onDownload('Chats')}>
-												Export Chats
-											</button>
+											<VoidButtonBgDarken className='px-4 py-1 w-full' onClick={() => { fileInputChatsRef.current?.click() }}>
+												{t('settings.importChats')}
+											</VoidButtonBgDarken>
+											<VoidButtonBgDarken className='px-4 py-1 w-full' onClick={() => onDownload('Chats')}>
+												{t('settings.exportChats')}
+											</VoidButtonBgDarken>
 											<ConfirmButton className='px-4 py-1 w-full' onConfirm={() => { chatThreadsService.resetState(); }}>
-												Reset Chats
+												{t('settings.resetChats')}
 											</ConfirmButton>
 										</div>
 									</div>
@@ -2165,23 +2312,23 @@ export const Settings = () => {
 
 								{/* Built-in Settings section */}
 								<div>
-									<h2 className={`text-3xl mb-2`}>Built-in Settings</h2>
-									<h4 className={`text-void-fg-3 mb-4`}>{`IDE settings, keyboard settings, and theme customization.`}</h4>
+									<h2 className={`text-3xl mb-2`}>{t('settings.builtinSettings')}</h2>
+								<h4 className={`text-void-fg-3 mb-4`}>{t('settings.builtinSettingsDesc')}</h4>
 
 									<ErrorBoundary>
 										<div className='flex flex-col gap-2 justify-center max-w-48 w-full'>
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1" onClick={() => { commandService.executeCommand('workbench.action.openSettings') }}>
-												General Settings
-											</button>
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1" onClick={() => { commandService.executeCommand('workbench.action.openGlobalKeybindings') }}>
-												Keyboard Settings
-											</button>
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1" onClick={() => { commandService.executeCommand('workbench.action.selectTheme') }}>
-												Theme Settings
-											</button>
-											<button type="button" className="btn btn-secondary btn-sm px-4 py-1" onClick={() => { nativeHostService.showItemInFolder(environmentService.logsHome.fsPath) }}>
-												Open Logs
-											</button>
+											<VoidButtonBgDarken className='px-4 py-1' onClick={() => { commandService.executeCommand('workbench.action.openSettings') }}>
+												{t('settings.generalSettings')}
+											</VoidButtonBgDarken>
+											<VoidButtonBgDarken className='px-4 py-1' onClick={() => { commandService.executeCommand('workbench.action.openGlobalKeybindings') }}>
+												{t('settings.keyboardSettings')}
+											</VoidButtonBgDarken>
+											<VoidButtonBgDarken className='px-4 py-1' onClick={() => { commandService.executeCommand('workbench.action.selectTheme') }}>
+												{t('settings.themeSettings')}
+											</VoidButtonBgDarken>
+											<VoidButtonBgDarken className='px-4 py-1' onClick={() => { nativeHostService.showItemInFolder(environmentService.logsHome.fsPath) }}>
+												{t('settings.openLogs')}
+											</VoidButtonBgDarken>
 										</div>
 									</ErrorBoundary>
 								</div>
@@ -2189,8 +2336,8 @@ export const Settings = () => {
 
 								{/* Metrics section */}
 								<div className='max-w-[600px]'>
-									<h2 className={`text-3xl mb-2`}>Metrics</h2>
-							<h4 className={`text-void-fg-3 mb-4`}>Very basic anonymous usage tracking helps us keep CortexIDE running smoothly. You may opt out below. Regardless of this setting, CortexIDE never sees your code, messages, or API keys.</h4>
+									<h2 className={`text-3xl mb-2`}>{t('settings.metrics')}</h2>
+						<h4 className={`text-void-fg-3 mb-4`}>{t('settings.metricsDesc')}</h4>
 
 									<div className='my-2'>
 										{/* Disable All Metrics Switch */}
@@ -2204,7 +2351,7 @@ export const Settings = () => {
 														metricsService.capture(`Set metrics opt-out to ${newVal}`, {}) // this only fires if it's enabled, so it's fine to have here
 													}}
 												/>
-												<span className='text-void-fg-3 text-xs pointer-events-none'>{'Opt-out (requires restart)'}</span>
+												<span className='text-void-fg-3 text-xs pointer-events-none'>{t('settings.optOutRestart')}</span>
 											</div>
 										</ErrorBoundary>
 									</div>
@@ -2212,13 +2359,9 @@ export const Settings = () => {
 
 								{/* AI Instructions section */}
 								<div className='max-w-[600px]'>
-									<h2 className={`text-3xl mb-2`}>AI Instructions</h2>
+									<h2 className={`text-3xl mb-2`}>{t('settings.aiInstructions')}</h2>
 									<h4 className={`text-void-fg-3 mb-4`}>
-										<ChatMarkdownRender inPTag={true} string={`
-System instructions to include with all AI requests.
-// allow-any-unicode-next-line
-For project-scoped rules, use \`.cortexide/rules/*.md\` files — see Project Rules below.
-								`} chatMessageLocation={undefined} />
+										<ChatMarkdownRender inPTag={true} string={`${t('settings.aiInstructionsDesc')}\n${t('settings.aiInstructionsDesc2')}`} chatMessageLocation={undefined} />
 									</h4>
 									<ErrorBoundary>
 										<AIInstructionsBox />
@@ -2235,12 +2378,12 @@ For project-scoped rules, use \`.cortexide/rules/*.md\` files — see Project Ru
 													}}
 												/>
 												<span className='text-void-fg-3 text-xs pointer-events-none'>
-													{'Disable system message'}
+													{t('settings.disableSystemMessage')}
 												</span>
 											</div>
 										</ErrorBoundary>
 										<div className='text-void-fg-3 text-xs mt-1'>
-								{`When disabled, CortexIDE will not include anything in the system message except for content you specified above.`}
+								{t('settings.disableSystemMessageDesc')}
 										</div>
 									</div>
 								</div>
@@ -2259,34 +2402,31 @@ For project-scoped rules, use \`.cortexide/rules/*.md\` files — see Project Ru
 							{/* MCP section */}
 							<div className={shouldShowTab('mcp') ? `` : 'hidden'}>
 								<ErrorBoundary>
-									<h2 className='text-3xl mb-2'>MCP</h2>
+									<h2 className='text-3xl mb-2'>{t('settings.mcpShort')}</h2>
 									<h4 className={`text-void-fg-3 mb-4`}>
-										<ChatMarkdownRender inPTag={true} string={`
-Use Model Context Protocol to provide Agent mode with more tools.
-							`} chatMessageLocation={undefined} />
+										<ChatMarkdownRender inPTag={true} string={t('settings.mcpDesc')} chatMessageLocation={undefined} />
 									</h4>
 									<div className='my-2 flex flex-wrap gap-2'>
-										<button type="button" className="btn btn-secondary btn-sm px-4 py-1 max-w-48" onClick={async () => { await mcpService.revealMCPConfigFile() }}>
-											Add MCP Server
-										</button>
-										<button
-											type="button"
-											className="btn btn-secondary btn-sm px-4 py-1 max-w-64"
+										<VoidButtonBgDarken className='px-4 py-1 max-w-48' onClick={async () => { await mcpService.revealMCPConfigFile() }}>
+											{t('settings.addMcpServer')}
+										</VoidButtonBgDarken>
+										<VoidButtonBgDarken
+											className='px-4 py-1 max-w-64'
 											onClick={async () => {
 												try {
 													const result = await mcpService.addRecommendedMCPServer('playwright')
 													accessor.get('INotificationService').info(
 														result === 'added'
-															? 'Added the Playwright MCP server (browser automation) to mcp.json. It connects via npx on first use.'
-															: 'A "playwright" MCP server is already in your mcp.json.'
+														? t('settings.playwrightAdded')
+														: t('settings.playwrightExists')
 													)
 												} catch (e) {
-													accessor.get('INotificationService').error(`Could not add Playwright MCP: ${e}`)
+													accessor.get('INotificationService').error(t('settings.playwrightAddFailed').replace('{0}', String(e)))
 												}
 											}}
 										>
-											+ Playwright (browser automation)
-										</button>
+											{t('settings.playwrightButton')}
+										</VoidButtonBgDarken>
 									</div>
 
 									<ErrorBoundary>

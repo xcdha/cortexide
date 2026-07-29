@@ -178,6 +178,12 @@ if (isWatch) {
 	// Transform TSX/JSX class names and compile Tailwind CSS (requires postcss@^8 in root node_modules)
 	execSync('npx scope-tailwind ./src -o src2/ -s void-scope -c styles.css -p "void-"', { stdio: 'inherit' });
 
+	// Generate cortexideStyles.ts from styles.css (inject CSS as string into JS bundle)
+	const cssContent = fs.readFileSync(path.join(__dirname, 'src2', 'styles.css'), 'utf8');
+	const cssEscaped = JSON.stringify(cssContent);
+	fs.writeFileSync(path.join(__dirname, 'src2', 'util', 'cortexideStyles.ts'), 'export const cortexideStyles = ' + cssEscaped + ';\n', 'utf8');
+	console.log('✅ Generated cortexideStyles.ts (' + cssEscaped.length + ' bytes)');
+
 	// Run tsup once
 	execSync('npx tsup', { stdio: 'inherit' });
 

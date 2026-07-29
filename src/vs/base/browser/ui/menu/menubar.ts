@@ -18,7 +18,7 @@ import { Emitter, Event } from '../../../common/event.js';
 import { KeyCode, KeyMod, ScanCode, ScanCodeUtils } from '../../../common/keyCodes.js';
 import { ResolvedKeybinding } from '../../../common/keybindings.js';
 import { Disposable, DisposableStore, dispose, IDisposable } from '../../../common/lifecycle.js';
-import { isLinux, isMacintosh, isWindows } from '../../../common/platform.js';
+import { isMacintosh } from '../../../common/platform.js';
 import * as strings from '../../../common/strings.js';
 import './menubar.css';
 import * as nls from '../../../../nls.js';
@@ -87,7 +87,6 @@ export class MenuBar extends Disposable {
 
 	private numMenusShown: number = 0;
 	private overflowLayoutScheduled: IDisposable | undefined = undefined;
-	private isCleaningUp: boolean = false;
 
 	private readonly menuDisposables = this._register(new DisposableStore());
 
@@ -678,22 +677,11 @@ export class MenuBar extends Disposable {
 			return;
 		}
 
-		// CRITICAL FIX: Validate state machine integrity before allowing OPEN state
-		// If transitioning to OPEN, focusedMenu MUST be set. This prevents the bug where
-		// focusState is OPEN but focusedMenu is undefined, causing crashes when accessing
-		// this.focusedMenu.index in showCustomMenu.
-		if (value === MenubarState.OPEN && !this.focusedMenu) {
-			// State machine integrity violation: cannot open menu without focusedMenu
-			// This should never happen if all code paths set focusedMenu before setting focusState to OPEN
-			// However, as a defensive measure, we'll log and prevent the invalid state transition
-			console.warn('MenuBar: Attempted to set focusState to OPEN without focusedMenu. This indicates a state machine bug.');
-			// Don't allow the invalid state transition - return early
-			return;
-		}
-
 		const isVisible = this.isVisible;
 		const isOpen = this.isOpen;
 		const isFocused = this.isFocused;
+
+		this._focusState = value;
 
 		switch (value) {
 			case MenubarState.HIDDEN:
@@ -771,23 +759,13 @@ export class MenuBar extends Disposable {
 					this.showMenubar();
 				}
 
-				// CRITICAL FIX: At this point, focusedMenu is guaranteed to be set due to validation above
-				// However, add an additional defensive check as a safety net (defense in depth)
-				if (!this.focusedMenu) {
-					console.error('MenuBar: focusState set to OPEN but focusedMenu is undefined. This should be impossible after validation.');
-					// Reset to FOCUSED state to maintain state machine integrity
-					// Don't set _focusState to OPEN, keep it at current state
-					this._focusState = this._focusState; // Keep current state
-					return;
+				if (this.focusedMenu) {
+					this.cleanupCustomMenu();
+					this.showCustomMenu(this.focusedMenu.index, this.openedViaKeyboard);
 				}
-
-				this.cleanupCustomMenu();
-				this.showCustomMenu(this.focusedMenu.index, this.openedViaKeyboard);
 				break;
 		}
 
-		// Set the state AFTER all switch cases have been processed
-		// This ensures state is only updated if all validations pass
 		this._focusState = value;
 		this._onFocusStateChange.fire(this.focusState >= MenubarState.FOCUSED);
 	}
@@ -999,44 +977,32 @@ export class MenuBar extends Disposable {
 	}
 
 	private cleanupCustomMenu(): void {
-		// Prevent re-entrancy - if we're already cleaning up, don't do it again
-		if (this.isCleaningUp) {
-			return;
-		}
-
-		this.isCleaningUp = true;
-		try {
-			const focusedMenu = this.focusedMenu;
-			if (focusedMenu) {
-				// Defensive check: ensure holder exists before accessing it
-				// This prevents errors when cleanupCustomMenu is called in edge cases
-				if (focusedMenu.holder) {
-					// Remove 'open' class from button element (not from document.body on Windows)
-					const actualMenuIndex = focusedMenu.index >= this.numMenusShown ? MenuBar.OVERFLOW_INDEX : focusedMenu.index;
-					const customMenu = actualMenuIndex === MenuBar.OVERFLOW_INDEX ? this.overflowMenu : this.menus[actualMenuIndex];
-					customMenu.buttonElement?.classList.remove('open');
-
-					focusedMenu.holder.remove();
-				}
-
-				focusedMenu.widget?.dispose();
-
-				// Only update focusedMenu if it hasn't been cleared by another operation
-				if (this.focusedMenu === focusedMenu) {
-					this.focusedMenu = { index: focusedMenu.index };
-				}
+		if (this.focusedMenu) {
+			// Remove focus from the menus first
+			if (this.focusedMenu.index === MenuBar.OVERFLOW_INDEX) {
+				this.overflowMenu.buttonElement.focus();
+			} else {
+				this.menus[this.focusedMenu.index].buttonElement?.focus();
 			}
-			this.menuDisposables.clear();
-		} finally {
-			this.isCleaningUp = false;
+
+			if (this.focusedMenu.holder) {
+				this.focusedMenu.holder.parentElement?.classList.remove('open');
+
+				this.focusedMenu.holder.remove();
+			}
+
+			this.focusedMenu.widget?.dispose();
+
+			this.focusedMenu = { index: this.focusedMenu.index };
 		}
+		this.menuDisposables.clear();
 	}
 
 	private showCustomMenu(menuIndex: number, selectFirst = true): void {
 		const actualMenuIndex = menuIndex >= this.numMenusShown ? MenuBar.OVERFLOW_INDEX : menuIndex;
 		const customMenu = actualMenuIndex === MenuBar.OVERFLOW_INDEX ? this.overflowMenu : this.menus[actualMenuIndex];
 
-		if (!customMenu.actions || customMenu.actions.length === 0 || !customMenu.buttonElement || !customMenu.titleElement) {
+		if (!customMenu.actions || !customMenu.buttonElement || !customMenu.titleElement) {
 			return;
 		}
 
@@ -1044,53 +1010,29 @@ export class MenuBar extends Disposable {
 
 		customMenu.buttonElement.classList.add('open');
 
-		// Ensure the title element is visible and laid out before getting bounding rect
-		// This is critical on Windows where elements might not be laid out immediately
 		const titleBoundingRect = customMenu.titleElement.getBoundingClientRect();
 		const titleBoundingRectZoom = DOM.getDomNodeZoomLevel(customMenu.titleElement);
 
-		// Validate bounding rect - if invalid, use button element as fallback
-		let validBoundingRect = titleBoundingRect;
-		if (titleBoundingRect.width === 0 && titleBoundingRect.height === 0) {
-			validBoundingRect = customMenu.buttonElement.getBoundingClientRect();
-		}
-
 		if (this.options.compactMode?.horizontal === HorizontalDirection.Right) {
-			menuHolder.style.left = `${validBoundingRect.left + this.container.clientWidth}px`;
+			menuHolder.style.left = `${titleBoundingRect.left + this.container.clientWidth}px`;
 		} else if (this.options.compactMode?.horizontal === HorizontalDirection.Left) {
 			const windowWidth = DOM.getWindow(this.container).innerWidth;
-			menuHolder.style.right = `${windowWidth - validBoundingRect.left}px`;
+			menuHolder.style.right = `${windowWidth - titleBoundingRect.left}px`;
 			menuHolder.style.left = 'auto';
 		} else {
-			menuHolder.style.left = `${validBoundingRect.left * titleBoundingRectZoom}px`;
+			menuHolder.style.left = `${titleBoundingRect.left * titleBoundingRectZoom}px`;
 		}
 
 		if (this.options.compactMode?.vertical === VerticalDirection.Above) {
 			// TODO@benibenj Do not hardcode the height of the menu holder
-			menuHolder.style.top = `${validBoundingRect.top - this.menus.length * 30 + this.container.clientHeight}px`;
+			menuHolder.style.top = `${titleBoundingRect.top - this.menus.length * 30 + this.container.clientHeight}px`;
 		} else if (this.options.compactMode?.vertical === VerticalDirection.Below) {
-			menuHolder.style.top = `${validBoundingRect.top}px`;
+			menuHolder.style.top = `${titleBoundingRect.top}px`;
 		} else {
-			menuHolder.style.top = `${validBoundingRect.bottom * titleBoundingRectZoom}px`;
+			menuHolder.style.top = `${titleBoundingRect.bottom * titleBoundingRectZoom}px`;
 		}
 
-		// Ensure menu holder is visible with explicit styles
-		menuHolder.style.position = 'fixed';
-		menuHolder.style.zIndex = '10000';
-		menuHolder.style.visibility = 'visible';
-		menuHolder.style.display = 'block';
-		menuHolder.style.opacity = '1';
-		menuHolder.style.pointerEvents = 'auto';
-
-		// On Windows and Linux, append dropdown to document.body to avoid stacking context issues
-		// where the dropdown renders behind the workbench content
-		// Linux experiences the same stacking context issues as Windows
-		if (isWindows || isLinux) {
-			const window = DOM.getWindow(this.container);
-			window.document.body.appendChild(menuHolder);
-		} else {
-			customMenu.buttonElement.appendChild(menuHolder);
-		}
+		customMenu.buttonElement.appendChild(menuHolder);
 
 		const menuOptions: IMenuOptions = {
 			getKeyBinding: this.options.getKeybinding,

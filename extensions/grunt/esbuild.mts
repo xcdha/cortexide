@@ -15,4 +15,9 @@ run({
 	},
 	srcDir,
 	outdir: outDir,
+	additionalOptions: {
+		loader: {
+			'.ttf': 'dataurl',
+		}
+	}
 }, process.argv);

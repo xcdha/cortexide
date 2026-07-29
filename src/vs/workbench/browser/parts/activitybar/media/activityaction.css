@@ -140,7 +140,11 @@
 
 .monaco-workbench .activitybar > .content :not(.monaco-menu) > .monaco-action-bar .active-item-indicator,
 .monaco-workbench .activitybar > .content :not(.monaco-menu) > .monaco-action-bar .badge {
-	z-index: 2;
+	/* z-index lowered to 0 so badges do not create a stacking context that
+	 * can render above sibling stacking contexts (e.g. the menubar dropdown
+	 * which is nested under `.titlebar-left` with z-index: 1). The badge
+	 * still renders correctly because its parent has `position: absolute`. */
+	z-index: 0 !important;
 }
 
 .monaco-workbench .activitybar > .content :not(.monaco-menu) > .monaco-action-bar .profile-badge {

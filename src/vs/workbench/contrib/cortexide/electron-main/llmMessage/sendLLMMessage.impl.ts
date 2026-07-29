@@ -15,7 +15,7 @@ import { GoogleAuth } from 'google-auth-library'
 /* eslint-enable */
 
 import { GeminiLLMChatMessage, LLMChatMessage, LLMFIMMessage, ModelListParams, OllamaModelResponse, OnError, OnFinalMessage, OnText, RawToolCallObj } from '../../common/sendLLMMessageTypes.js';
-import { rawToolCallObjOfParamsStr, buildRawToolCallObj, sanitizeOpenAIMessagesForEmptyContent, toOpenAICompatibleTool, accumulateOpenAIChatDelta, buildTypedToolProperties, extractToolCallFromNonStreamingChoice, reduceGeminiChunk, finalizeGeminiToolId, effectiveSpecialToolFormat, convertOpenAIMessagesToOllamaChat } from '../../common/providerToolFormat.js';
+import { rawToolCallObjOfParamsStr, buildRawToolCallObj, sanitizeOpenAIMessagesForEmptyContent, toOpenAICompatibleTool, accumulateOpenAIChatDelta, buildTypedToolProperties, extractToolCallFromNonStreamingChoice, reduceGeminiChunk, finalizeGeminiToolId } from '../../common/providerToolFormat.js';
 import { formatGeminiRateLimitError } from '../../common/providerErrorFormat.js';
 import { ChatMode, displayInfoOfProviderName, FeatureName, ModelSelectionOptions, OverridesOfModel, ProviderName, SettingsOfProvider } from '../../common/cortexideSettingsTypes.js';
 import { getSendableReasoningInfo, getModelCapabilities, getProviderCapabilities, defaultProviderSettings, getReservedOutputTokenSpace } from '../../common/modelCapabilities.js';
@@ -90,7 +90,7 @@ const hashApiKey = (apiKey: string | undefined): string => {
  * Build cache key for OpenAI-compatible client.
  * Format: `${providerName}:${endpoint}:${apiKeyHash}`
  */
-const buildOpenAICacheKey = (providerName: ProviderName, settingsOfProvider: SettingsOfProvider): string => {
+const buildOpenAICacheKey = (providerName: ProviderName, settingsOfProvider: SettingsOfProvider, modelName?: string): string => {
 	let endpoint = ''
 	let apiKey = 'noop'
 
@@ -103,7 +103,7 @@ const buildOpenAICacheKey = (providerName: ProviderName, settingsOfProvider: Set
 		apiKey = settingsOfProvider[providerName]?.apiKey || ''
 	}
 
-	return `${providerName}:${endpoint}:${hashApiKey(apiKey)}`
+	return `${providerName}:${endpoint}:${hashApiKey(apiKey)}${modelName ? `:${modelName}` : ''}`
 }
 
 /**
@@ -111,7 +111,7 @@ const buildOpenAICacheKey = (providerName: ProviderName, settingsOfProvider: Set
  * For local providers (ollama, vLLM, lmStudio, localhost openAICompatible/liteLLM),
  * we cache clients to reuse connections. Cloud providers always get new instances.
  */
-const getOpenAICompatibleClient = async ({ settingsOfProvider, providerName, includeInPayload }: { settingsOfProvider: SettingsOfProvider, providerName: ProviderName, includeInPayload?: { [s: string]: any } }): Promise<OpenAI> => {
+const getOpenAICompatibleClient = async ({ settingsOfProvider, providerName, includeInPayload, modelName }: { settingsOfProvider: SettingsOfProvider, providerName: ProviderName, includeInPayload?: { [s: string]: any }, modelName?: string }): Promise<OpenAI> => {
 	// Detect if this is a local provider
 	const isExplicitLocalProvider = providerName === 'ollama' || providerName === 'vLLM' || providerName === 'lmStudio'
 	const isLocalhostEndpoint = (providerName === 'openAICompatible' || providerName === 'liteLLM')
@@ -120,7 +120,7 @@ const getOpenAICompatibleClient = async ({ settingsOfProvider, providerName, inc
 
 	// Only cache for local providers
 	if (isLocalProvider) {
-		const cacheKey = buildOpenAICacheKey(providerName, settingsOfProvider)
+		const cacheKey = buildOpenAICacheKey(providerName, settingsOfProvider, modelName)
 		const cached = openAIClientCache.get(cacheKey)
 		if (cached) {
 			return cached
@@ -128,11 +128,11 @@ const getOpenAICompatibleClient = async ({ settingsOfProvider, providerName, inc
 	}
 
 	// Create new client (will cache if local)
-	const client = await newOpenAICompatibleSDK({ settingsOfProvider, providerName, includeInPayload })
+	const client = await newOpenAICompatibleSDK({ settingsOfProvider, providerName, includeInPayload, modelName })
 
 	// Cache if local provider
 	if (isLocalProvider) {
-		const cacheKey = buildOpenAICacheKey(providerName, settingsOfProvider)
+		const cacheKey = buildOpenAICacheKey(providerName, settingsOfProvider, modelName)
 		openAIClientCache.set(cacheKey, client)
 	}
 
@@ -159,10 +159,18 @@ const getOllamaClient = ({ endpoint }: { endpoint: string }): Ollama => {
 
 const parseHeadersJSON = (s: string | undefined): Record<string, string | null | undefined> | undefined => {
 	if (!s) return undefined
+	// Trim whitespace before validation - users often paste with leading/trailing whitespace
+	const trimmed = s.trim()
+	if (!trimmed) return undefined
+	// Quick syntactic check: must start with '{' or be empty
+	if (!trimmed.startsWith('{')) {
+		throw new Error(`Error parsing OpenAI-Compatible headers: expected a JSON object (e.g. { "X-Header": "value" }), got: ${trimmed.slice(0, 50)}${trimmed.length > 50 ? '...' : ''}. Open Settings → OpenAI-Compatible → Custom Headers to fix.`)
+	}
 	try {
-		return JSON.parse(s)
+		return JSON.parse(trimmed)
 	} catch (e) {
-		throw new Error(`Error parsing OpenAI-Compatible headers: ${s} is not a valid JSON.`)
+		const preview = trimmed.length > 50 ? trimmed.slice(0, 50) + '...' : trimmed
+		throw new Error(`Error parsing OpenAI-Compatible headers: ${preview} is not a valid JSON. Open Settings → OpenAI-Compatible → Custom Headers to fix.`)
 	}
 }
 
@@ -173,7 +181,7 @@ const parseHeadersJSON = (s: string | undefined): Record<string, string | null |
  * - Ctrl+K / Apply: 150-250 tokens (small edits)
  * - Other/Cloud: 300 tokens (default)
  */
-const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includeInPayload }: { settingsOfProvider: SettingsOfProvider, providerName: ProviderName, includeInPayload?: { [s: string]: any } }) => {
+const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includeInPayload, modelName }: { settingsOfProvider: SettingsOfProvider, providerName: ProviderName, includeInPayload?: { [s: string]: any }, modelName?: string }) => {
 	// Network optimizations: timeouts and connection reuse
 	// The OpenAI SDK handles HTTP keep-alive and connection pooling internally
 	// Use shorter timeout for local models (they're on localhost, should be fast)
@@ -272,9 +280,19 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 		return new OpenAI({ baseURL: 'https://api.deepseek.com/v1', apiKey: thisConfig.apiKey, ...commonPayloadOpts })
 	}
 	else if (providerName === 'openAICompatible') {
-		const thisConfig = settingsOfProvider[providerName]
-		const headers = parseHeadersJSON(thisConfig.headersJSON)
-		return new OpenAI({ baseURL: thisConfig.endpoint, apiKey: thisConfig.apiKey, defaultHeaders: headers, ...commonPayloadOpts })
+		const thisConfig = settingsOfProvider[providerName] as any
+		// Find the connection associated with the model
+		const model = modelName ? thisConfig.models?.find((m: any) => m.modelName === modelName) : undefined
+		const connectionId = model?.connectionId
+		const connections: any[] = thisConfig.connections || []
+		const connection = connectionId
+			? connections.find(c => c.id === connectionId)
+			: connections[0]  // default to first connection
+		// Backward compat: if no connections, use legacy fields
+		const endpoint = connection?.endpoint || thisConfig.endpoint
+		const apiKey = connection?.apiKey || thisConfig.apiKey
+		const headers = parseHeadersJSON(connection?.headersJSON ?? thisConfig.headersJSON)
+		return new OpenAI({ baseURL: endpoint, apiKey, defaultHeaders: headers, ...commonPayloadOpts })
 	}
 	else if (providerName === 'groq') {
 		const thisConfig = settingsOfProvider[providerName]
@@ -452,13 +470,6 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 		additionalOpenAIPayload,
 	} = getModelCapabilities(providerName, modelName_, overridesOfModel)
 
-	// Detect local inference early — local models use XML/JSON tool text, not native tool APIs.
-	const isExplicitLocalProviderChat = providerName === 'ollama' || providerName === 'vLLM' || providerName === 'lmStudio'
-	const isLocalhostEndpointChat = (providerName === 'openAICompatible' || providerName === 'liteLLM')
-		&& isLoopbackEndpoint(settingsOfProvider[providerName]?.endpoint)
-	const isLocalChat = isExplicitLocalProviderChat || isLocalhostEndpointChat
-	const toolFormat = effectiveSpecialToolFormat(specialToolFormat, isLocalChat)
-
 	// APIs like Vertex/Pollinations require non-empty content except for the optional final assistant message
 	const messagesToSend = sanitizeOpenAIMessagesForEmptyContent(messages)
 
@@ -475,12 +486,12 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 
 	// tools
 	const potentialTools = openAITools(chatMode, mcpTools)
-	const nativeToolsObj = potentialTools && toolFormat === 'openai-style' ?
+	const nativeToolsObj = potentialTools && specialToolFormat === 'openai-style' ?
 		{ tools: potentialTools } as const
 		: {}
 
 	// instance
-	const openai: OpenAI = await getOpenAICompatibleClient({ providerName, settingsOfProvider, includeInPayload })
+	const openai: OpenAI = await getOpenAICompatibleClient({ providerName, settingsOfProvider, includeInPayload, modelName })
 	if (providerName === 'microsoftAzure') {
 		// Required to select the model
 		(openai as AzureOpenAI).deploymentName = modelName;
@@ -496,7 +507,7 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 	}
 
 	// manually parse out tool results if XML
-	if (!toolFormat) {
+	if (!specialToolFormat) {
 		const { newOnText, newOnFinalMessage } = extractXMLToolsWrapper(onText, onFinalMessage, chatMode, mcpTools)
 		onText = newOnText
 		onFinalMessage = newOnFinalMessage
@@ -511,7 +522,11 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 	let isRetrying = false // Flag to prevent processing streaming chunks during retry
 	let timeoutDeliveredPartial = false // Set when stall timeout fires with partial; outer catch skips onError
 
-	// isLocalChat computed above for tool-format routing; reused for timeout tuning below.
+	// Detect if this is a local provider for timeout optimization
+	const isExplicitLocalProviderChat = providerName === 'ollama' || providerName === 'vLLM' || providerName === 'lmStudio'
+	const isLocalhostEndpointChat = (providerName === 'openAICompatible' || providerName === 'liteLLM')
+		&& isLoopbackEndpoint(settingsOfProvider[providerName]?.endpoint)
+	const isLocalChat = isExplicitLocalProviderChat || isLocalhostEndpointChat
 
 	// Helper function to process streaming response
 	const processStreamingResponse = async (response: any) => {
@@ -1063,17 +1078,18 @@ const sendMistralFIM = ({ messages, onFinalMessage, onError, settingsOfProvider,
 			maxTokens: 300,
 			stop: messages.stopTokens,
 		})
-		.then(async response => {
+		.then(async (response: any) => {
 
 			// unfortunately, _setAborter() does not exist
 			let content = response?.ok ? response.value.choices?.[0]?.message?.content ?? '' : '';
 			const fullText = typeof content === 'string' ? content
-				: content.map(chunk => (chunk.type === 'text' ? chunk.text : '')).join('')
+				: content.map((chunk: any) => (chunk.type === 'text' ? chunk.text : '')).join('')
 
 			onFinalMessage({ fullText, fullReasoning: '', anthropicReasoning: null });
 		})
-		.catch(error => {
-			onError({ message: error + '', fullError: error });
+		.catch((error: unknown) => {
+			const fullError = error instanceof Error ? error : new Error(String(error));
+			onError({ message: fullError.message, fullError });
 		})
 }
 
@@ -1206,7 +1222,17 @@ const sendOllamaChat = async ({ messages, onText, onFinalMessage, onError, setti
 	}
 
 	const messagesToSend = sanitizeOpenAIMessagesForEmptyContent(messages)
-	const ollamaMessages = convertOpenAIMessagesToOllamaChat(messagesToSend)
+	// Ollama's native /api/chat requires messages[].content to be a STRING, but OpenAI-format messages
+	// may carry array content (multimodal text/image parts). Flatten text parts to a string (images,
+	// rare for local coding, are dropped here — text-only agentic is the target).
+	const ollamaMessages = messagesToSend.map((m) => {
+		const c = (m as any).content
+		let content: string
+		if (typeof c === 'string') { content = c }
+		else if (Array.isArray(c)) { content = c.map((part: any) => typeof part === 'string' ? part : (part?.text ?? '')).join('') }
+		else { content = c == null ? '' : String(c) }
+		return { role: (m as any).role, content }
+	})
 
 	let fullTextSoFar = ''
 	let firstTokenReceived = false

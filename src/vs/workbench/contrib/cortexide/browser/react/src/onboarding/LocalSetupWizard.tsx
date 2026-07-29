@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------*/
 
 import { useEffect, useState } from 'react';
-import { useAccessor } from '../util/services.js';
+import { useAccessor, useIsDark } from '../util/services.js';
+import { useTranslation } from '../util/useTranslation.js';
 import { Check, X, Loader2, AlertCircle, ChevronRight, ChevronLeft, Cpu } from 'lucide-react';
 import { ModelPackType, LocalSetupState, SystemCheckResult, VerificationResults } from '../../../../common/localSetupServiceTypes.js';
 import { getAllModelPacks } from '../../../../common/modelPacks.js';
@@ -18,6 +19,8 @@ interface LocalSetupWizardProps {
 
 export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) => {
   const accessor = useAccessor();
+  const isDark = useIsDark();
+  const { t } = useTranslation();
   const localSetupService = accessor.get('ILocalSetupService');
 
   // Return null if service isn't available
@@ -99,10 +102,10 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
       if (checkResult.ollamaRunning) {
         setStep(2);
       } else {
-        setErrorMessage('Ollama installation completed but service is not running. Please start Ollama manually.');
+        setErrorMessage(t('localWizard.error.notRunning'));
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to install Ollama. Please install it manually from https://ollama.com';
+      const message = error instanceof Error ? error.message : t('localWizard.error.installFailed');
       setErrorMessage(message);
       console.error('Install failed:', error);
     }
@@ -125,7 +128,7 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
         setErrorMessage(localSetupService.state.error.message);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to download models. Please check your internet connection and try again.';
+      const message = error instanceof Error ? error.message : t('localWizard.error.downloadFailed');
       setErrorMessage(message);
       console.error('Download failed:', error);
     }
@@ -139,7 +142,7 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
       setVerificationResults(results);
       setStep(4);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to verify model capabilities. Please check that your models are properly installed.';
+      const message = error instanceof Error ? error.message : t('localWizard.error.verifyFailed');
       setErrorMessage(message);
       console.error('Verification failed:', error);
     }
@@ -149,8 +152,8 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
   const handleSkipVerification = () => {
     // Create mock results that indicate verification was skipped
     setVerificationResults({
-      chat: { passed: false, error: 'Verification skipped' },
-      toolCalling: { passed: false, error: 'Verification skipped' },
+      chat: { passed: false, error: t('localWizard.error.skipped') },
+      toolCalling: { passed: false, error: t('localWizard.error.skipped') },
       webCalling: { passed: false, skipped: true },
       vision: { passed: false, skipped: true }
     });
@@ -164,7 +167,7 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
       await localSetupService.setDefaults(selectedPack);
       setStep(5);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to set default models. You can configure them manually in settings.';
+      const message = error instanceof Error ? error.message : t('localWizard.error.defaultsFailed');
       setErrorMessage(message);
       console.error('Set defaults failed:', error);
     }
@@ -212,18 +215,18 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
     return (
       <ErrorBoundary>
 				<div className="w-full max-w-4xl mx-auto p-8">
-					<div className="rounded-[32px] border border-border-3 bg-bg-2/70 backdrop-blur-xl shadow-[0_45px_120px_rgba(0,0,0,0.45)] p-8">
+					<div className={`rounded-[32px] border border-void-border-3 bg-void-bg-2 shadow-[0_45px_120px_rgba(0,0,0,${isDark ? 0.45 : 0.15})] p-8`}>
 						<div className="text-center space-y-6">
 							<AlertCircle className="w-16 h-16 text-rose-500 mx-auto" />
-							<h2 className="text-3xl font-light text-fg-0">Setup Error</h2>
-							<div className="text-fg-3 max-w-2xl mx-auto">
+							<h2 className="text-3xl font-light text-void-fg-0">{t('localWizard.setupError')}</h2>
+							<div className="text-void-fg-3 max-w-2xl mx-auto">
 								<p className="mb-4">{state.error.message}</p>
 								{state.error.code === 'DOWNLOAD_FAILED' && state.error.model &&
-                <p className="text-sm">Failed while downloading: {state.error.model}</p>
+                <p className="text-sm">{t('localWizard.failedWhileDownloading').replace('{0}', state.error.model)}</p>
                 }
 								{state.error.code === 'INSUFFICIENT_DISK_SPACE' &&
                 <p className="text-sm">
-										Required: {state.error.requiredGb.toFixed(1)} GB, Available: {state.error.availableGb.toFixed(1)} GB
+										{t('localWizard.required').replace('{0}', `${state.error.requiredGb.toFixed(1)} GB`)}, {t('localWizard.available').replace('{0}', `${state.error.availableGb.toFixed(1)} GB`)}
 									</p>
                 }
 							</div>
@@ -234,15 +237,15 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
                     setStep(0);
                     setErrorMessage(null);
                   }}
-                  className="px-6 py-3 rounded-2xl border border-border-3 bg-bg-3 text-fg-0 font-medium">
+                  className="px-6 py-3 rounded-2xl border border-void-border-3 bg-void-bg-3 text-void-fg-0 font-medium">
 
-									Start Over
+									{t('localWizard.startOver')}
 								</button>
 								<button
                   onClick={onSkip}
-                  className="btn btn-primary px-6 py-3 font-medium">
+                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] text-white font-medium">
 
-									Skip Setup
+									{t('localWizard.skipSetup')}
 								</button>
 							</div>
 						</div>
@@ -258,17 +261,17 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
 				{/* Progress Bar */}
 				<div className="mb-8">
 					<div className="flex items-center justify-between mb-2">
-						<span className="text-sm text-fg-3">Step {progress.currentStep} of {progress.totalSteps}</span>
+						<span className="text-sm text-void-fg-3">{t('localWizard.stepProgress').replace('{0}', String(progress.currentStep)).replace('{1}', String(progress.totalSteps))}</span>
 						{progress.canCancel &&
             <button
               onClick={handleCancel}
-              className="btn btn-ghost btn-sm text-sm">
+              className="text-sm text-void-fg-3 hover:text-void-fg-1">
 
-								Cancel
+								{t('common.cancel')}
 							</button>
             }
 					</div>
-					<div className="w-full bg-bg-3 rounded-full h-2">
+					<div className="w-full bg-void-bg-3 rounded-full h-2">
 						<div
               className="bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] h-2 rounded-full transition-all duration-300"
               style={{ width: `${progress.currentStep / progress.totalSteps * 100}%` }} />
@@ -277,9 +280,9 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
 				</div>
 
 				{/* Step Content */}
-				<div className="rounded-[32px] border border-border-3 bg-bg-2/70 backdrop-blur-xl shadow-[0_45px_120px_rgba(0,0,0,0.45)] p-8">
+				<div className={`rounded-[32px] border border-void-border-3 bg-void-bg-2 shadow-[0_45px_120px_rgba(0,0,0,${isDark ? 0.45 : 0.15})] p-8`}>
 					{errorMessage &&
-          <div className="mb-6 p-4 rounded-xl border border-warning/30 bg-warning/15 text-warning text-sm">
+          <div className="mb-6 p-4 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-warning text-sm">
 							<div className="flex items-start gap-2">
 								<AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
 								<span>{errorMessage}</span>
@@ -299,56 +302,57 @@ export const LocalSetupWizard = ({ onComplete, onSkip }: LocalSetupWizardProps) 
 };
 
 const ChoiceStep = ({ onChoice, onBack }: {onChoice: (choice: 'local' | 'cloud' | 'later') => void;onBack: () => void;}) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
 			<div className="flex items-center gap-4 mb-4">
 				<button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-4 py-2">
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 					<ChevronLeft className="w-4 h-4" />
-					Back
+					{t('common.back')}
 				</button>
 			</div>
 			<div className="text-center space-y-4">
-				<h2 className="text-4xl font-light text-fg-0">Choose your setup</h2>
-				<p className="text-fg-3 max-w-2xl mx-auto">
-					Get started with CortexIDE. Choose local models for privacy, or use cloud providers.
+				<h2 className="text-4xl font-light text-void-fg-0">{t('localWizard.chooseSetup')}</h2>
+				<p className="text-void-fg-3 max-w-2xl mx-auto">
+					{t('localWizard.chooseSetupDesc')}
 				</p>
 			</div>
 
 			<div className="grid gap-4 mt-8">
 				<button
           onClick={() => onChoice('local')}
-          className="p-6 rounded-2xl border-2 border-border-2 bg-bg-3/60 hover:border-[var(--cortex-brand)] hover:bg-bg-3 transition-all text-left">
+          className="p-6 rounded-2xl border border-void-border-2 bg-void-bg-3 hover:border-void-border-1 transition-all text-left">
 
 					<div className="flex items-center justify-between">
 						<div>
-							<h3 className="text-xl font-medium text-fg-0 mb-2">Use local models (no API keys)</h3>
-							<p className="text-fg-3">Run models on your computer for complete privacy. We'll help you set up Ollama.</p>
+							<h3 className="text-xl font-medium text-void-fg-0 mb-2">{t('localWizard.useLocalModels')}</h3>
+							<p className="text-void-fg-3">{t('localWizard.useLocalModelsDesc')}</p>
 						</div>
-						<ChevronRight className="w-6 h-6 text-fg-3" />
+						<ChevronRight className="w-6 h-6 text-void-fg-3" />
 					</div>
 				</button>
 
 				<button
           onClick={() => onChoice('cloud')}
-          className="p-6 rounded-2xl border border-border-3 bg-bg-3/40 hover:border-border-2 transition-all text-left">
+          className="p-6 rounded-2xl border border-void-border-3 bg-void-bg-3 hover:border-void-border-1 transition-all text-left">
 
 					<div className="flex items-center justify-between">
 						<div>
-							<h3 className="text-xl font-medium text-fg-0 mb-2">Use cloud provider</h3>
-							<p className="text-fg-3">Connect to Anthropic, OpenAI, or other cloud providers with API keys.</p>
+							<h3 className="text-xl font-medium text-void-fg-0 mb-2">{t('localWizard.useCloudProvider')}</h3>
+							<p className="text-void-fg-3">{t('localWizard.useCloudProviderDesc')}</p>
 						</div>
-						<ChevronRight className="w-6 h-6 text-fg-3" />
+						<ChevronRight className="w-6 h-6 text-void-fg-3" />
 					</div>
 				</button>
 
 				<button
           onClick={() => onChoice('later')}
-          className="p-4 rounded-2xl border border-border-4 bg-transparent hover:bg-bg-3/20 transition-all text-center">
+          className="p-4 rounded-2xl border border-void-border-4 bg-transparent hover:bg-void-bg-3 transition-all text-center">
 
-					<span className="text-fg-3">Decide later</span>
+					<span className="text-void-fg-3">{t('localWizard.decideLater')}</span>
 				</button>
 			</div>
 		</div>);
@@ -356,22 +360,23 @@ const ChoiceStep = ({ onChoice, onBack }: {onChoice: (choice: 'local' | 'cloud' 
 };
 
 const SystemCheckStep = ({ systemCheck, onInstall, onNext, onBack, canGoBack }: {systemCheck: SystemCheckResult;onInstall: () => void;onNext: () => void;onBack: () => void;canGoBack: boolean;}) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
-			<h2 className="text-3xl font-light text-fg-0 mb-4">System Check</h2>
+			<h2 className="text-3xl font-light text-void-fg-0 mb-4">{t('localWizard.systemCheck')}</h2>
 
 			<div className="space-y-4">
 				<CheckItem
-          label="Ollama installed"
+          label={t('localWizard.ollamaInstalled')}
           status={systemCheck.ollamaInstalled ? 'pass' : 'fail'} />
 
 				<CheckItem
-          label="Ollama running"
+          label={t('localWizard.ollamaRunning')}
           status={systemCheck.ollamaRunning ? 'pass' : 'fail'} />
 
 				{systemCheck.diskSpaceGb !== null &&
         <CheckItem
-          label={`Disk space: ${systemCheck.diskSpaceGb.toFixed(1)} GB available`}
+          label={t('localWizard.diskSpace').replace('{0}', systemCheck.diskSpaceGb.toFixed(1))}
           status={systemCheck.diskSpaceGb > 10 ? 'pass' : 'warn'} />
 
         }
@@ -381,26 +386,26 @@ const SystemCheckStep = ({ systemCheck, onInstall, onNext, onBack, canGoBack }: 
 				{canGoBack &&
         <button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-5 py-3">
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 				{!systemCheck.ollamaInstalled &&
         <button
           onClick={onInstall}
-          className="btn btn-primary px-6 py-3 font-medium">
+          className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] text-white font-medium">
 
-						Install Ollama
+						{t('settings.installOllama')}
 					</button>
         }
 				{systemCheck.ollamaRunning &&
         <button
           onClick={onNext}
-          className="btn btn-secondary px-6 py-3 font-medium">
+          className="px-6 py-3 rounded-2xl border border-void-border-2 bg-void-bg-3 text-void-fg-0 font-medium">
 
-						Next
+						{t('common.next')}
 					</button>
         }
 			</div>
@@ -410,16 +415,17 @@ const SystemCheckStep = ({ systemCheck, onInstall, onNext, onBack, canGoBack }: 
 
 const CheckItem = ({ label, status }: {label: string;status: 'pass' | 'fail' | 'warn';}) => {
   return (
-    <div className="flex items-center gap-3 p-4 rounded-xl border border-border-3 bg-bg-3/40">
+    <div className="flex items-center gap-3 p-4 rounded-xl border border-void-border-3 bg-void-bg-3">
 			{status === 'pass' && <Check className="w-5 h-5 text-emerald-400" />}
 			{status === 'fail' && <X className="w-5 h-5 text-rose-500" />}
 			{status === 'warn' && <AlertCircle className="w-5 h-5 text-amber-400" />}
-			<span className="text-fg-1">{label}</span>
+			<span className="text-void-fg-1">{label}</span>
 		</div>);
 
 };
 
 const ModelPackStep = ({ selectedPack, onSelect, onDownload, state, onBack, canGoBack, detectedVramGB, recommendedPackKey }: {selectedPack: ModelPackType;onSelect: (pack: ModelPackType) => void;onDownload: () => void;state: LocalSetupState;onBack: () => void;canGoBack: boolean; detectedVramGB?: number | null; recommendedPackKey?: ModelPackKey;}) => {
+  const { t } = useTranslation();
   const packs = getAllModelPacks();
   const isDownloading = state.type === 'downloading';
 
@@ -429,25 +435,25 @@ const ModelPackStep = ({ selectedPack, onSelect, onDownload, state, onBack, canG
 				{canGoBack &&
         <button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-4 py-2">
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 			</div>
-			<h2 className="text-3xl font-light text-fg-0 mb-4">Choose a model pack</h2>
+			<h2 className="text-3xl font-light text-void-fg-0 mb-4">{t('localWizard.chooseModelPack')}</h2>
 
 			{/* Hardware detection badge */}
 			{detectedVramGB != null &&
-			<div className="flex items-center gap-2 p-3 rounded-xl border border-border-3 bg-bg-3/40 text-sm text-fg-2 mb-2">
+			<div className="flex items-center gap-2 p-3 rounded-xl border border-void-border-3 bg-void-bg-3 text-sm text-void-fg-2 mb-2">
 				<Cpu className="w-4 h-4 text-[var(--cortex-brand)] flex-shrink-0" />
 				// allow-any-unicode-next-line
-				<span>Detected <strong>{detectedVramGB} GB</strong> GPU memory — best model pre-selected for your hardware.</span>
+				<span>{t('localWizard.detectedVram').split('{0}')[0]}<strong>{detectedVramGB} GB</strong>{t('localWizard.detectedVram').split('{0}')[1]}</span>
 			</div>
 			}
 
-			<p className="text-fg-3 mb-6">Select a pre-configured set of models optimized for different use cases.</p>
+			<p className="text-void-fg-3 mb-6">{t('localWizard.selectModelPackDesc')}</p>
 
 			<div className="grid gap-4">
 				{packs.map((pack) => {
@@ -457,23 +463,23 @@ const ModelPackStep = ({ selectedPack, onSelect, onDownload, state, onBack, canG
             key={pack.id}
             onClick={() => onSelect(pack.id as ModelPackType)}
             className={`p-6 rounded-2xl border-2 text-left transition-all ${
-            selectedPack === pack.id ? "border-[var(--cortex-brand)] bg-bg-3/80" : "border-border-3 bg-bg-3/40 hover:border-border-2"}`}>
+            selectedPack === pack.id ? "border-void-border-1 bg-void-bg-3" : "border-void-border-3 bg-void-bg-3 hover:border-void-border-1"}`}>
 
 						<div className="flex items-start justify-between">
 							<div className="flex-1">
 								<div className="flex items-center gap-2 mb-2">
-									<h3 className="text-xl font-medium text-fg-0">{pack.name}</h3>
+									<h3 className="text-xl font-medium text-void-fg-0">{pack.name}</h3>
 									{isHwRecommended &&
-                  <span className="px-2 py-1 text-xs bg-[var(--cortex-brand)]/20 text-[var(--cortex-brand)] rounded">Best for your hardware</span>
+                  <span className="px-2 py-1 text-xs bg-void-bg-3 text-[var(--cortex-brand)] rounded">{t('localWizard.bestForHardware')}</span>
                   }
                   {!isHwRecommended && pack.id === 'balanced' && !recommendedPackKey &&
-                  <span className="px-2 py-1 text-xs bg-[var(--cortex-brand)]/20 text-[var(--cortex-brand)] rounded">Recommended</span>
+                  <span className="px-2 py-1 text-xs bg-void-bg-3 text-[var(--cortex-brand)] rounded">{t('localWizard.recommended')}</span>
                   }
 								</div>
-								<p className="text-fg-3 mb-3">{pack.description}</p>
-								<div className="flex gap-4 text-sm text-fg-4">
-									<span>~{pack.estimatedSizeGb} GB</span>
-									<span>{pack.minRamGb}+ GB RAM</span>
+								<p className="text-void-fg-3 mb-3">{pack.description}</p>
+								<div className="flex gap-4 text-sm text-void-fg-4">
+									<span>{t('localWizard.gb').replace('{0}', String(pack.estimatedSizeGb))}</span>
+									<span>{t('localWizard.ram').replace('{0}', String(pack.minRamGb))}</span>
 								</div>
 							</div>
 							{selectedPack === pack.id && <Check className="w-5 h-5 text-[var(--cortex-brand)]" />}
@@ -484,19 +490,19 @@ const ModelPackStep = ({ selectedPack, onSelect, onDownload, state, onBack, canG
 			</div>
 
 			{isDownloading && state.type === 'downloading' &&
-      <div className="mt-6 p-4 rounded-xl border border-border-3 bg-bg-3/40">
+      <div className="mt-6 p-4 rounded-xl border border-void-border-3 bg-void-bg-3">
 					<div className="flex items-center gap-3 mb-2">
 						<Loader2 className="w-5 h-5 text-[var(--cortex-brand)] animate-spin" />
-						<span className="text-fg-1">Downloading {state.currentModel}...</span>
+						<span className="text-void-fg-1">{t('localWizard.downloadingModel').replace('{0}', state.currentModel)}</span>
 					</div>
-					<div className="w-full bg-bg-1 rounded-full h-2">
+					<div className="w-full bg-void-bg-1 rounded-full h-2">
 						<div
             className="bg-[var(--cortex-brand)] h-2 rounded-full transition-all"
             style={{ width: `${state.progress / state.totalModels * 100}%` }} />
 
 					</div>
-					<span className="text-sm text-fg-4 mt-2">
-						{state.progress} of {state.totalModels} models
+					<span className="text-sm text-void-fg-4 mt-2">
+						{t('localWizard.modelsProgress').replace('{0}', String(state.progress)).replace('{1}', String(state.totalModels))}
 					</span>
 				</div>
       }
@@ -506,18 +512,18 @@ const ModelPackStep = ({ selectedPack, onSelect, onDownload, state, onBack, canG
         <button
           onClick={onBack}
           disabled={isDownloading}
-          className="btn btn-secondary flex items-center gap-2 px-5 py-3 disabled:opacity-50">
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 				<button
           onClick={onDownload}
           disabled={isDownloading}
-          className="btn btn-primary flex-1 px-6 py-3 font-medium disabled:opacity-50">
+          className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed">
 
-					{isDownloading ? 'Downloading...' : 'Download Models'}
+					{isDownloading ? t('localWizard.downloading') : t('localWizard.downloadModels')}
 				</button>
 			</div>
 		</div>);
@@ -525,6 +531,7 @@ const ModelPackStep = ({ selectedPack, onSelect, onDownload, state, onBack, canG
 };
 
 const VerificationStep = ({ onVerify, onSkip, state, onBack, canGoBack }: {onVerify: () => void;onSkip?: () => void;state: LocalSetupState;onBack: () => void;canGoBack: boolean;}) => {
+  const { t } = useTranslation();
   const isVerifying = state.type === 'verifying';
 
   return (
@@ -534,22 +541,22 @@ const VerificationStep = ({ onVerify, onSkip, state, onBack, canGoBack }: {onVer
         <button
           onClick={onBack}
           disabled={isVerifying}
-          className="btn btn-secondary flex items-center gap-2 px-4 py-2 disabled:opacity-50">
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 			</div>
-			<h2 className="text-3xl font-light text-fg-0 mb-4">Verifying Capabilities</h2>
-			<p className="text-fg-3 mb-6">Testing that your local models work correctly.</p>
+			<h2 className="text-3xl font-light text-void-fg-0 mb-4">{t('localWizard.verifyingCapabilities')}</h2>
+			<p className="text-void-fg-3 mb-6">{t('localWizard.verifyingDesc')}</p>
 
 			{isVerifying && state.type === 'verifying' &&
       <div className="space-y-4">
-					<div className="p-4 rounded-xl border border-border-3 bg-bg-3/40">
+					<div className="p-4 rounded-xl border border-void-border-3 bg-void-bg-3">
 						<div className="flex items-center gap-3">
 							<Loader2 className="w-5 h-5 text-[var(--cortex-brand)] animate-spin" />
-							<span className="text-fg-1">Testing {state.currentTest}...</span>
+							<span className="text-void-fg-1">{t('localWizard.testing').replace('{0}', state.currentTest)}</span>
 						</div>
 					</div>
 				</div>
@@ -560,24 +567,24 @@ const VerificationStep = ({ onVerify, onSkip, state, onBack, canGoBack }: {onVer
 					{canGoBack &&
         <button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-5 py-3">
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 							<ChevronLeft className="w-4 h-4" />
-							Back
+							{t('common.back')}
 						</button>
         }
 					<button
           onClick={onVerify}
-          className="btn btn-primary flex-1 px-6 py-3 font-medium">
+          className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] text-white font-medium">
 
-						Run Verification
+						{t('localWizard.runVerification')}
 					</button>
 					{onSkip &&
         <button
           onClick={onSkip}
-          className="btn btn-secondary px-6 py-3 font-medium">
+          className="px-6 py-3 rounded-2xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
-							Skip
+							{t('common.skip')}
 						</button>
         }
 				</div>
@@ -587,6 +594,7 @@ const VerificationStep = ({ onVerify, onSkip, state, onBack, canGoBack }: {onVer
 };
 
 const VerificationResultsStep = ({ results, onNext, onBack, canGoBack }: {results: VerificationResults;onNext: () => void;onBack: () => void;canGoBack: boolean;}) => {
+  const { t } = useTranslation();
   const allPassed = results.chat.passed && results.toolCalling.passed;
   const hasFailures = !results.chat.passed || !results.toolCalling.passed;
 
@@ -596,20 +604,20 @@ const VerificationResultsStep = ({ results, onNext, onBack, canGoBack }: {result
 				{canGoBack &&
         <button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-4 py-2">
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 			</div>
-			<h2 className="text-3xl font-light text-fg-0 mb-4">Verification Results</h2>
+			<h2 className="text-3xl font-light text-void-fg-0 mb-4">{t('localWizard.verificationResults')}</h2>
 
 			<div className="space-y-3">
-				<ResultItem label="Chat" passed={results.chat.passed} error={results.chat.error} />
-				<ResultItem label="Tool Calling" passed={results.toolCalling.passed} error={results.toolCalling.error} />
+				<ResultItem label={t('localWizard.chat')} passed={results.chat.passed} error={results.chat.error} />
+				<ResultItem label={t('localWizard.toolCalling')} passed={results.toolCalling.passed} error={results.toolCalling.error} />
 				<ResultItem
-          label="Web Calling"
+          label={t('localWizard.webCalling')}
           passed={results.webCalling.passed}
           skipped={results.webCalling.skipped}
           error={results.webCalling.error} />
@@ -617,8 +625,8 @@ const VerificationResultsStep = ({ results, onNext, onBack, canGoBack }: {result
 			</div>
 
 			{hasFailures &&
-      <div className="mt-4 p-4 rounded-xl border border-warning/30 bg-warning/15 text-fg-3 text-sm">
-					<p>Some verification tests failed. You can still proceed, but some features may not work correctly.</p>
+      <div className="mt-4 p-4 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 text-sm">
+					<p>{t('localWizard.someTestsFailed')}</p>
 				</div>
       }
 
@@ -626,17 +634,17 @@ const VerificationResultsStep = ({ results, onNext, onBack, canGoBack }: {result
 				{canGoBack &&
         <button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-5 py-3">
+          className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 				<button
           onClick={onNext}
-          className="btn btn-primary flex-1 px-6 py-3 font-medium">
+          className="flex-1 px-6 py-3 rounded-2xl bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] text-white font-medium">
 
-					{allPassed ? 'Continue' : 'Continue Anyway'}
+					{allPassed ? t('localWizard.continue') : t('localWizard.continueAnyway')}
 				</button>
 			</div>
 		</div>);
@@ -644,14 +652,15 @@ const VerificationResultsStep = ({ results, onNext, onBack, canGoBack }: {result
 };
 
 const ResultItem = ({ label, passed, skipped, error }: {label: string;passed: boolean;skipped?: boolean;error?: string;}) => {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-3 p-4 rounded-xl border border-border-3 bg-bg-3/40">
+    <div className="flex items-center gap-3 p-4 rounded-xl border border-void-border-3 bg-void-bg-3">
 			{passed && <Check className="w-5 h-5 text-emerald-400" />}
 			{!passed && !skipped && <X className="w-5 h-5 text-rose-500" />}
-			{skipped && <AlertCircle className="w-5 h-5 text-fg-4" />}
+			{skipped && <AlertCircle className="w-5 h-5 text-void-fg-4" />}
 			<div className="flex-1">
-				<span className="text-fg-1">{label}</span>
-				{skipped && <span className="text-fg-4 ml-2">(skipped)</span>}
+				<span className="text-void-fg-1">{label}</span>
+				{skipped && <span className="text-void-fg-4 ml-2">{t('localWizard.skipped')}</span>}
 				{error && <span className="text-rose-500 ml-2 text-sm">({error})</span>}
 			</div>
 		</div>);
@@ -659,30 +668,31 @@ const ResultItem = ({ label, passed, skipped, error }: {label: string;passed: bo
 };
 
 const DefaultsStep = ({ onComplete, onBack, canGoBack }: {onComplete: () => void;onBack: () => void;canGoBack: boolean;}) => {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
 			<div className="flex items-center gap-4 mb-4">
 				{canGoBack &&
         <button
           onClick={onBack}
-          className="btn btn-secondary flex items-center gap-2 px-4 py-2">
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-void-border-3 bg-void-bg-3 text-void-fg-3 hover:text-void-fg-1 hover:border-void-border-2 transition-all">
 
 						<ChevronLeft className="w-4 h-4" />
-						Back
+						{t('common.back')}
 					</button>
         }
 			</div>
 			<div className="text-center">
 				<Check className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
-				<h2 className="text-3xl font-light text-fg-0 mb-4">Setup Complete!</h2>
-				<p className="text-fg-3 mb-8 max-w-2xl mx-auto">
-					Your local models are configured and ready to use. CortexIDE will use local models by default.
+				<h2 className="text-3xl font-light text-void-fg-0 mb-4">{t('localWizard.setupComplete')}</h2>
+				<p className="text-void-fg-3 mb-8 max-w-2xl mx-auto">
+					{t('localWizard.setupCompleteDesc')}
 				</p>
 				<button
           onClick={onComplete}
           className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[var(--cortex-brand)] to-[var(--cortex-brand-dim)] text-white font-medium text-lg">
 
-					Start using CortexIDE
+					{t('localWizard.startUsingCortexIDE')}
 				</button>
 			</div>
 		</div>);
